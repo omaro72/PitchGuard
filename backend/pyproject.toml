@@ -1,0 +1,33 @@
+[project]
+name = "pitchguard-api"
+version = "0.1.0"
+description = "FastAPI backend for PitchGuard"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "ollama",
+    "pydantic",
+    "pydantic-settings",
+    "uvicorn[standard]",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2",
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+markers = ["integration: tests that require a configured local Ollama service"]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "SIM", "UP"]
