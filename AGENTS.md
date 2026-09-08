@@ -32,6 +32,8 @@ These rules apply to every AI coding agent working in this repository. Follow th
 
 **Never leave comments in the repo.** The standard is zero comments: no explanatory comments or docblocks, TODO/FIXME notes, lint/type suppression directives, or commented-out code. Express intent through names, structure, and tests; put rationale in commit messages or PR descriptions. Interpreter shebangs are executable directives, not comments.
 
+**Never create Git commits.** Do not run `git commit`, amend, merge, rebase, cherry-pick, revert, or use any other command or tool that creates or rewrites commits. Leave all changes uncommitted. Only the human developer may create commits.
+
 - Read `docs/prd.md` before implementing product behavior.
 - Work on one bounded task at a time and do not implement unrelated features.
 - Add or update tests with every behavior change.
@@ -42,8 +44,6 @@ These rules apply to every AI coding agent working in this repository. Follow th
 - Run the relevant lint, type-check, test, and build commands before declaring a task complete.
 - Report exactly what was tested and what remains unverified.
 - Do not claim that a planned feature is implemented.
-- Keep commits small, understandable, and focused.
-- Do not rewrite or manufacture commit history.
 
 ## AI-safety rules
 

@@ -2,6 +2,87 @@
 
 This log records meaningful AI-assisted development tasks without implying that generated work was accepted without review.
 
+## 2026-09-08 — Codex frontend skill and Git commit boundary
+
+### Goal
+
+Make the repository's frontend-design skill discoverable and useful in Codex, align it with PitchGuard's real frontend stack, and reserve all Git commit creation for the human developer.
+
+### Instructions given to the AI coding tool
+
+Inspect the Claude-oriented frontend skill, adapt only the parts needed for Codex and the technologies used by PitchGuard, explain how to invoke it, and add an English rule that prohibits AI coding agents from creating commits.
+
+### Generated changes reviewed
+
+The coding agent compared the skill with the current Next.js, React, TypeScript, Tailwind CSS, ESLint, and Vitest setup. It also reviewed the repository-wide agent rules for conflicting commit guidance. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- The skill entry file was not named `SKILL.md`, so Codex could not discover it as a repository skill.
+- The original instructions referenced Claude, unrelated frontend technologies, an unavailable Motion dependency, and a missing license file.
+- The existing development rules suggested keeping agent-created commits small, which conflicted with the new prohibition.
+
+### Corrections made
+
+- Converted the skill to a valid repository-scoped Codex skill.
+- Aligned its instructions with the existing PitchGuard frontend dependencies and architecture boundaries.
+- Added an absolute rule that AI coding agents must leave changes uncommitted.
+- Removed the older rules that implied agents could create or rewrite commits.
+
+### Verification performed
+
+- The Codex skill validator reported `Skill is valid!`.
+- Codex discovered the skill as `frontend-design` from `.agents/skills`.
+- `git diff --check` passed after the agent-rule update.
+
+### Remaining limitations
+
+- The human developer remains responsible for reviewing, staging, committing, and pushing changes.
+
+## 2026-09-08 — Frontend scanability and responsive design refinement
+
+### Goal
+
+Improve the existing PitchGuard interface without changing its API contract, review behavior, or product scope, with particular attention to long-form scanability and mobile controls.
+
+### Instructions given to the AI coding tool
+
+Use the repository's frontend-design skill, preserve all existing functionality, make the form easier to scan, ensure the layout works well on mobile, and run the complete frontend checks.
+
+### Generated changes reviewed
+
+The coding agent inspected the current page, review workspace, report components, component tests, product requirements, and bundled Next.js CSS and accessibility guidance. It reviewed the responsive breakpoints and the resulting diff. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- The working form presented four long sections with limited visual separation.
+- Remove actions used floated positioning that was fragile on narrow screens.
+- Primary and secondary actions did not consistently use the full available width on small screens.
+- The PR term `beat` needed a clearer visible label while preserving the backend field and accessible name.
+- No browser surface was available to capture a visual screenshot in the development environment.
+
+### Corrections made
+
+- Added a restrained editorial header and clearer explanation of the three-reviewer process.
+- Strengthened the four-step hierarchy and added a compact workspace introduction.
+- Replaced floated remove actions with responsive item headers.
+- Made form controls and primary actions more touch-friendly on small screens.
+- Displayed `Coverage focus (journalist beat)` while preserving the `beat` API field.
+- Improved decision, score, finding, empty, loading, and reviewer-error presentation without changing result logic.
+
+### Verification performed
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 9 tests.
+- `npm run build` passed and prerendered the root route.
+- Existing payload, validation, complete-report, and partial-error tests remained unchanged and passed.
+
+### Remaining limitations
+
+- Automated browser screenshot comparison is not configured.
+- Human visual review on physical mobile devices remains recommended.
+
 ## 2026-09-07 — Ollama grammar compatibility fix
 
 ### Goal

@@ -13,10 +13,10 @@ import type {
 } from "@/lib/review-types";
 
 const inputClassName =
-  "mt-2 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-950 shadow-sm outline-none placeholder:text-slate-400 focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100";
+  "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 shadow-sm outline-none transition-[border-color,box-shadow] placeholder:text-slate-400 focus:border-teal-700 focus:ring-3 focus:ring-teal-100 sm:text-sm";
 const textareaClassName = `${inputClassName} resize-y leading-6`;
 const secondaryButtonClassName =
-  "rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-teal-700 hover:bg-teal-50 hover:text-teal-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto";
 
 const initialRequest: ReviewRequest = {
   campaign: {
@@ -53,20 +53,27 @@ interface RequestFailure {
 
 function FormSection({ number, title, description, action, children }: FormSectionProps) {
   return (
-    <section className="border-b border-slate-200 px-5 py-7 last:border-b-0 sm:px-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700">
-            {number}
-          </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
-            {title}
-          </h2>
-          <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">{description}</p>
+    <section className="border-b border-slate-200/80 px-4 py-7 last:border-b-0 sm:px-7 sm:py-9">
+      <div className="grid gap-5 sm:grid-cols-[3rem_minmax(0,1fr)]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-teal-200 bg-teal-50 font-mono text-xs font-bold text-teal-800">
+          {number.replace("Step ", "")}
         </div>
-        {action}
+        <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-teal-700">
+                {number}
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+                {title}
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">{description}</p>
+            </div>
+            {action ? <div className="shrink-0">{action}</div> : null}
+          </div>
+          <div className="mt-6">{children}</div>
+        </div>
       </div>
-      <div className="mt-6">{children}</div>
     </section>
   );
 }
@@ -223,13 +230,29 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
   }
 
   return (
-    <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] xl:gap-8">
       <form
-        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+        className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_24px_65px_-50px_rgba(15,23,42,0.7)]"
         id="pitch-review-form"
         onSubmit={handleSubmit}
         ref={formRef}
       >
+        <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-5 sm:px-7 sm:py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-teal-700">
+                Review workspace
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-950">Prepare the brief</h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
+                Complete four sections. Optional evidence and coverage improve the quality of the review.
+              </p>
+            </div>
+            <span className="w-fit rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
+              4 sections
+            </span>
+          </div>
+        </div>
         <FormSection
           description="Describe the organization and the news you want the journalist to consider."
           number="Step 1"
@@ -312,21 +335,27 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
             <div className="space-y-5">
               {reviewRequest.evidence.map((item, index) => (
                 <fieldset
-                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
+                  className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-[inset_3px_0_0_0_#99f6e4] sm:p-5"
                   key={item.id}
                 >
-                  <legend className="px-1 font-semibold text-slate-950">
+                  <legend className="sr-only">
                     Evidence {item.id}
                   </legend>
-                  <button
-                    aria-label={`Remove evidence ${item.id}`}
-                    className="float-right -mt-7 text-sm font-semibold text-red-700 hover:text-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
-                    onClick={() => removeEvidence(index)}
-                    type="button"
-                  >
-                    Remove
-                  </button>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-[7rem_1fr]">
+                  <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                    <div>
+                      <p className="font-semibold text-slate-950">Evidence {item.id}</p>
+                      <p className="mt-1 text-xs text-slate-500">Supplied source material</p>
+                    </div>
+                    <button
+                      aria-label={`Remove evidence ${item.id}`}
+                      className="rounded-lg px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 hover:text-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                      onClick={() => removeEvidence(index)}
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-[7rem_1fr]">
                     <label className="block text-sm font-semibold text-slate-800">
                       ID
                       <input
@@ -363,7 +392,7 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
                   <label className="mt-4 flex w-fit items-center gap-3 text-sm font-medium text-slate-800">
                     <input
                       checked={item.confidential}
-                      className="h-4 w-4 rounded border-slate-300 accent-cyan-700"
+                      className="h-4 w-4 rounded border-slate-300 accent-teal-700"
                       onChange={(event) =>
                         updateEvidence(index, { confidential: event.target.checked })
                       }
@@ -418,8 +447,9 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
             </label>
           </div>
           <label className="mt-5 block text-sm font-semibold text-slate-800">
-            Beat
+            Coverage focus <span className="font-normal text-slate-500">(journalist beat)</span>
             <textarea
+              aria-label="Beat"
               className={`${textareaClassName} min-h-28`}
               maxLength={500}
               onChange={(event) =>
@@ -460,21 +490,27 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
               <div className="mt-5 space-y-5">
                 {reviewRequest.journalist.recent_coverage.map((item, index) => (
                   <fieldset
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
+                    className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-[inset_3px_0_0_0_#99f6e4] sm:p-5"
                     key={item.id}
                   >
-                    <legend className="px-1 font-semibold text-slate-950">
+                    <legend className="sr-only">
                       Coverage {item.id}
                     </legend>
-                    <button
-                      aria-label={`Remove coverage ${item.id}`}
-                      className="float-right -mt-7 text-sm font-semibold text-red-700 hover:text-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
-                      onClick={() => removeCoverage(index)}
-                      type="button"
-                    >
-                      Remove
-                    </button>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-[7rem_1fr]">
+                    <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                      <div>
+                        <p className="font-semibold text-slate-950">Coverage {item.id}</p>
+                        <p className="mt-1 text-xs text-slate-500">Recent journalist work</p>
+                      </div>
+                      <button
+                        aria-label={`Remove coverage ${item.id}`}
+                        className="rounded-lg px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 hover:text-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                        onClick={() => removeCoverage(index)}
+                        type="button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="mt-5 grid gap-4 sm:grid-cols-[7rem_1fr]">
                       <label className="block text-sm font-semibold text-slate-800">
                         ID
                         <input
@@ -568,12 +604,12 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
           </p>
         </FormSection>
 
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 px-5 py-5 sm:px-7">
-          <p aria-live="polite" className="text-sm text-slate-600">
+        <div className="flex flex-col gap-4 border-t border-slate-200 bg-[#102a2d] px-4 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-7">
+          <p aria-live="polite" className="text-sm text-slate-300">
             {isSubmitting ? "The three reviewers are processing the pitch." : "Ready for review."}
           </p>
           <button
-            className="rounded-lg bg-cyan-800 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-cyan-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-800 disabled:cursor-wait disabled:opacity-60"
+            className="w-full rounded-xl bg-teal-300 px-5 py-3 text-sm font-bold text-[#102a2d] shadow-sm transition-colors hover:bg-teal-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
             disabled={isSubmitting}
             type="submit"
           >
@@ -584,30 +620,40 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
 
       <section
         aria-labelledby="review-results-title"
-        className="scroll-mt-6 outline-none"
+        className="scroll-mt-6 outline-none xl:pt-1"
         ref={resultsRef}
         tabIndex={-1}
       >
-        <div className="mb-5">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700">
-            Quality gate
-          </p>
-          <h2
-            className="mt-1 text-2xl font-semibold tracking-tight text-slate-950"
-            id="review-results-title"
-          >
-            Review report
-          </h2>
+        <div className="mb-5 flex items-end justify-between gap-4 px-1">
+          <div>
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-teal-700">
+              Quality gate
+            </p>
+            <h2
+              className="mt-1 text-3xl font-semibold tracking-tight text-slate-950"
+              id="review-results-title"
+            >
+              Review report
+            </h2>
+          </div>
+          <span className="mb-1 hidden rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-sm sm:inline-flex">
+            Human review required
+          </span>
         </div>
 
         {isSubmitting ? (
           <div
             aria-live="polite"
-            className="rounded-2xl border border-cyan-200 bg-cyan-50 p-6 shadow-sm"
+            className="rounded-[1.5rem] border border-teal-200 bg-teal-50 p-6 shadow-sm"
             role="status"
           >
-            <h3 className="font-semibold text-cyan-950">Review in progress</h3>
-            <p className="mt-2 text-sm leading-6 text-cyan-900">
+            <div className="mb-5 flex gap-2" aria-hidden="true">
+              <span className="h-2 w-12 rounded-full bg-teal-700" />
+              <span className="h-2 w-12 rounded-full bg-teal-300" />
+              <span className="h-2 w-12 rounded-full bg-teal-200" />
+            </div>
+            <h3 className="font-semibold text-teal-950">Review in progress</h3>
+            <p className="mt-2 text-sm leading-6 text-teal-900">
               Evidence, relevance, and PR risk reviewers are running. A final decision will only appear if all three complete.
             </p>
           </div>
@@ -633,17 +679,22 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
             response={reviewResponse}
           />
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+          <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white p-6 shadow-sm sm:p-8">
             <div
               aria-hidden="true"
-              className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-100 text-xl font-bold text-cyan-800"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-teal-100 text-lg font-bold text-teal-800"
             >
               ✓
             </div>
-            <h3 className="mt-4 font-semibold text-slate-950">Your report will appear here</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
+            <h3 className="mt-5 text-xl font-semibold text-slate-950">Your report will appear here</h3>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
               Complete the form to review claim support, journalist relevance, personalization, and PR risk.
             </p>
+            <div className="mt-6 grid gap-3 text-left text-sm text-slate-600 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+              <p className="rounded-xl bg-slate-50 px-3 py-3"><span className="font-mono text-xs font-bold text-teal-700">01</span><br />Claim support</p>
+              <p className="rounded-xl bg-slate-50 px-3 py-3"><span className="font-mono text-xs font-bold text-teal-700">02</span><br />Targeting quality</p>
+              <p className="rounded-xl bg-slate-50 px-3 py-3"><span className="font-mono text-xs font-bold text-teal-700">03</span><br />Reputation risk</p>
+            </div>
           </div>
         )}
       </section>

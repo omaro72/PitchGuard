@@ -8,10 +8,10 @@ import type {
 } from "@/lib/review-types";
 
 const decisionStyles: Record<ReviewDecision | "ERROR", string> = {
-  PASS: "border-emerald-200 bg-emerald-50 text-emerald-950",
-  REVISE: "border-amber-200 bg-amber-50 text-amber-950",
-  BLOCK: "border-red-200 bg-red-50 text-red-950",
-  ERROR: "border-slate-300 bg-slate-100 text-slate-900",
+  PASS: "border-emerald-300 bg-emerald-50 text-emerald-950 shadow-[inset_5px_0_0_0_#059669]",
+  REVISE: "border-amber-300 bg-amber-50 text-amber-950 shadow-[inset_5px_0_0_0_#d97706]",
+  BLOCK: "border-red-300 bg-red-50 text-red-950 shadow-[inset_5px_0_0_0_#dc2626]",
+  ERROR: "border-slate-300 bg-slate-100 text-slate-900 shadow-[inset_5px_0_0_0_#64748b]",
 };
 
 const claimStyles: Record<ClaimStatus, string> = {
@@ -55,7 +55,7 @@ function readableLabel(value: string): string {
 function Badge({ children, className }: { children: ReactNode; className: string }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ${className}`}
+      className={`inline-flex rounded-full px-2.5 py-1 text-[0.68rem] font-bold tracking-wide ${className}`}
     >
       {children}
     </span>
@@ -64,14 +64,14 @@ function Badge({ children, className }: { children: ReactNode; className: string
 
 function ReportSection({ eyebrow, title, children }: ReportSectionProps) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700">
+    <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-[0_20px_55px_-48px_rgba(15,23,42,0.7)] sm:p-7">
+      <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em] text-teal-700">
         {eyebrow}
       </p>
-      <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+      <h3 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
         {title}
       </h3>
-      <div className="mt-5">{children}</div>
+      <div className="mt-6">{children}</div>
     </section>
   );
 }
@@ -85,7 +85,7 @@ function TextList({ items, emptyText }: TextListProps) {
     <ul className="space-y-2 text-sm leading-6 text-slate-700">
       {items.map((item, index) => (
         <li className="flex gap-2" key={`${item}-${index}`}>
-          <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-600" />
+          <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-600" />
           <span>{item}</span>
         </li>
       ))}
@@ -95,7 +95,7 @@ function TextList({ items, emptyText }: TextListProps) {
 
 function MissingContext({ items }: { items: string[] }) {
   return (
-    <div className="mt-5 border-t border-slate-100 pt-5">
+    <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4">
       <h4 className="text-sm font-semibold text-slate-900">Missing context</h4>
       <div className="mt-2">
         <TextList items={items} emptyText="No missing context reported." />
@@ -106,14 +106,14 @@ function MissingContext({ items }: { items: string[] }) {
 
 function Score({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-baseline justify-between gap-4">
-        <span className="text-sm font-medium text-slate-700">{label}</span>
-        <span className="text-2xl font-bold text-slate-950">{value}/100</span>
+        <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-600">{label}</span>
+        <span className="text-2xl font-bold tracking-tight text-slate-950">{value}/100</span>
       </div>
       <meter
         aria-label={`${label}: ${value} out of 100`}
-        className="mt-3 h-2 w-full accent-cyan-700"
+        className="mt-4 h-2 w-full accent-teal-700"
         max={100}
         min={0}
         value={value}
@@ -132,15 +132,15 @@ export function ReviewReport({ response, isSubmitting, onRetry }: ReviewReportPr
     <div className="space-y-5">
       <section
         aria-live="polite"
-        className={`rounded-2xl border p-6 shadow-sm sm:p-8 ${decisionStyles[reportStatus]}`}
+        className={`rounded-[1.5rem] border p-6 sm:p-8 ${decisionStyles[reportStatus]}`}
         role={reportStatus === "ERROR" ? "alert" : "status"}
       >
-        <p className="text-xs font-bold uppercase tracking-[0.2em]">Review decision</p>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-3xl font-bold tracking-tight">{reportStatus}</h2>
+        <p className="text-[0.68rem] font-bold uppercase tracking-[0.2em]">Review decision</p>
+        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-4xl font-semibold tracking-tight">{reportStatus}</h2>
           {reportStatus === "ERROR" ? (
             <button
-              className="rounded-lg border border-slate-400 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl border border-slate-400 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               disabled={isSubmitting}
               onClick={onRetry}
               type="button"
@@ -181,12 +181,12 @@ export function ReviewReport({ response, isSubmitting, onRetry }: ReviewReportPr
               ) : (
                 response.evidence_review.claims.map((claim, index) => (
                   <article
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
                     key={`${claim.claim_text}-${index}`}
                   >
                     <div className="flex flex-wrap gap-2">
                       <Badge className={claimStyles[claim.status]}>{claim.status}</Badge>
-                      <Badge className="bg-cyan-100 text-cyan-900">
+                      <Badge className="bg-teal-100 text-teal-900">
                         {readableLabel(claim.claim_type)}
                       </Badge>
                       <Badge className="bg-slate-200 text-slate-800">
@@ -274,14 +274,14 @@ export function ReviewReport({ response, isSubmitting, onRetry }: ReviewReportPr
               ) : (
                 response.risk_review.findings.map((finding, index) => (
                   <article
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
                     key={`${finding.category}-${index}`}
                   >
                     <div className="flex flex-wrap gap-2">
                       <Badge className={severityStyles[finding.severity]}>
                         {finding.severity}
                       </Badge>
-                      <Badge className="bg-cyan-100 text-cyan-900">
+                      <Badge className="bg-teal-100 text-teal-900">
                         {readableLabel(finding.category)}
                       </Badge>
                     </div>
@@ -315,12 +315,12 @@ export function ReviewReport({ response, isSubmitting, onRetry }: ReviewReportPr
           <ul className="space-y-3">
             {response.errors.map((error) => (
               <li
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5"
                 key={`${error.reviewer}-${error.code}`}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge className="bg-slate-200 text-slate-800">{error.reviewer}</Badge>
-                  <span className="text-xs font-medium text-slate-500">{error.code}</span>
+                  <span className="break-all font-mono text-xs font-medium text-slate-500">{error.code}</span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-700">{error.message}</p>
                 <p className="mt-2 text-xs font-medium text-slate-500">
