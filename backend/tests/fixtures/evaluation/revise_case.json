@@ -1,0 +1,98 @@
+{
+  "case_id": "revise_case",
+  "fictional": true,
+  "request": {
+    "campaign": {
+      "company_name": "Fictional company Lantern Otter Studio",
+      "announcement": "Lantern Otter Studio is presenting a fictional office food-waste sensor prototype.",
+      "target_audience": "Readers interested in fictional workplace sustainability tools"
+    },
+    "evidence": [
+      {
+        "id": "E1",
+        "source": "Fictional prototype test note",
+        "content": "A fictional prototype test recorded battery runtime but did not measure any reduction in office food waste.",
+        "confidential": false
+      }
+    ],
+    "journalist": {
+      "name": "Fictional journalist Taylor Grove",
+      "publication": "The Imaginary Workplace Review",
+      "beat": "Sustainable workplace operations and office energy use",
+      "recent_coverage": [
+        {
+          "id": "C1",
+          "title": "Fictional offices compare low-energy lighting",
+          "summary": "A fictional article focused on measured office energy consumption.",
+          "publication_date": "2026-07-21",
+          "url": "https://example.com/fictional/office-energy"
+        }
+      ]
+    },
+    "pitch": "Hello Taylor, Lantern Otter Studio's fictional Orbit Bloom sensor cuts office food waste by half. It is the revolutionary answer every modern office needs. We thought this might interest your readers. Would you like a briefing?"
+  },
+  "mocked_outputs": {
+    "evidence_review": {
+      "claims": [
+        {
+          "claim_text": "cuts office food waste by half",
+          "claim_type": "PERFORMANCE",
+          "importance": "MEDIUM",
+          "status": "UNSUPPORTED",
+          "explanation": "The supplied fictional test did not measure food-waste reduction.",
+          "evidence_ids": []
+        }
+      ],
+      "summary": "A material performance claim is unsupported by the supplied fictional evidence.",
+      "missing_context": []
+    },
+    "relevance_review": {
+      "relevance_score": 64,
+      "personalization_score": 38,
+      "summary": "The topic is adjacent to the fictional journalist's beat, but the pitch does not use the supplied coverage meaningfully.",
+      "matched_topics": [
+        "workplace sustainability"
+      ],
+      "mismatches": [
+        "Recent coverage focuses on office energy rather than food-waste measurement"
+      ],
+      "missing_context": []
+    },
+    "risk_review": {
+      "findings": [
+        {
+          "category": "UNSUPPORTED_SUPERLATIVE",
+          "severity": "MEDIUM",
+          "pitch_excerpt": "the revolutionary answer every modern office needs",
+          "explanation": "The promotional wording is not supported by the supplied fictional test.",
+          "recommendation": "Replace the superlative with a precise, evidence-bounded description of the prototype."
+        }
+      ],
+      "summary": "The fictional pitch contains actionable but non-critical promotional language.",
+      "missing_context": []
+    }
+  },
+  "expected_decision": "REVISE",
+  "expected_reason_codes": [
+    "REVISE_UNSUPPORTED_MATERIAL_CLAIM",
+    "REVISE_PARTIAL_RELEVANCE",
+    "REVISE_LOW_PERSONALIZATION",
+    "REVISE_ACTIONABLE_RISK"
+  ],
+  "expectations": {
+    "required_claim_statuses": [
+      "UNSUPPORTED"
+    ],
+    "required_risk_categories": [
+      "UNSUPPORTED_SUPERLATIVE"
+    ],
+    "relevance_score_range": {
+      "minimum": 40,
+      "maximum": 69
+    },
+    "personalization_score_range": {
+      "minimum": 0,
+      "maximum": 59
+    }
+  }
+}

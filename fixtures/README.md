@@ -1,5 +1,5 @@
 # Fixtures
 
-This directory will contain fictional request data and mocked AI responses for deterministic automated tests and a future demo mode.
+Deterministic automated evaluation fixtures are stored with the backend tests in `backend/tests/fixtures/evaluation/`. Each case contains fictional request data, schema-valid mocked reviewer responses, expected decision reason codes, and stable evaluation expectations.
 
-Fixtures must not contain personal information, confidential information, real client material, or API credentials. Each fixture should document the behavior it is intended to test. No product fixtures have been added yet.
+This root directory is reserved for possible future demo-mode fixtures. Fixtures must not contain personal information, confidential information, real client material, or API credentials.

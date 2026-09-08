@@ -1,0 +1,103 @@
+{
+  "case_id": "block_case",
+  "fictional": true,
+  "request": {
+    "campaign": {
+      "company_name": "Fictional company Copper Comet Works",
+      "announcement": "Copper Comet Works is preparing a fictional invoice-processing software launch.",
+      "target_audience": "Readers interested in fictional enterprise operations software"
+    },
+    "evidence": [
+      {
+        "id": "E1",
+        "source": "Fictional controlled trial summary",
+        "content": "A fictional controlled trial found an 18% average reduction in invoice-processing time.",
+        "confidential": false
+      },
+      {
+        "id": "E2",
+        "source": "Fictional embargoed launch sheet",
+        "content": "The fictional launch price is 480 credits and is confidential until 1 November 2026.",
+        "confidential": true
+      }
+    ],
+    "journalist": {
+      "name": "Fictional journalist Morgan Reed",
+      "publication": "The Example Enterprise Desk",
+      "beat": "Enterprise software and business operations",
+      "recent_coverage": [
+        {
+          "id": "C1",
+          "title": "Fictional finance teams update invoice workflows",
+          "summary": "A fictional article about measured changes to invoice-processing operations.",
+          "publication_date": "2026-08-02",
+          "url": "https://example.com/fictional/invoice-workflows"
+        }
+      ]
+    },
+    "pitch": "Hello Morgan, Copper Comet Works' fictional CometDesk cuts invoice-processing time by 75%. Our confidential launch price is 480 credits before the fictional embargo lifts. Would you like a briefing?"
+  },
+  "mocked_outputs": {
+    "evidence_review": {
+      "claims": [
+        {
+          "claim_text": "cuts invoice-processing time by 75%",
+          "claim_type": "PERFORMANCE",
+          "importance": "HIGH",
+          "status": "CONTRADICTED",
+          "explanation": "Fictional evidence E1 reports 18%, not the 75% stated in the pitch.",
+          "evidence_ids": [
+            "E1"
+          ]
+        }
+      ],
+      "summary": "A high-importance performance claim contradicts the supplied fictional evidence.",
+      "missing_context": []
+    },
+    "relevance_review": {
+      "relevance_score": 84,
+      "personalization_score": 74,
+      "summary": "The fictional campaign matches the journalist's supplied beat and recent coverage.",
+      "matched_topics": [
+        "enterprise software",
+        "invoice-processing operations"
+      ],
+      "mismatches": [],
+      "missing_context": []
+    },
+    "risk_review": {
+      "findings": [
+        {
+          "category": "CONFIDENTIALITY",
+          "severity": "HIGH",
+          "pitch_excerpt": "Our confidential launch price is 480 credits",
+          "explanation": "The pitch exposes pricing explicitly marked confidential in fictional evidence E2.",
+          "recommendation": "Remove the embargoed price unless an authorized human confirms it may be disclosed."
+        }
+      ],
+      "summary": "The fictional pitch includes a high-severity confidentiality risk.",
+      "missing_context": []
+    }
+  },
+  "expected_decision": "BLOCK",
+  "expected_reason_codes": [
+    "BLOCK_HIGH_IMPORTANCE_CONTRADICTION",
+    "BLOCK_HIGH_CONFIDENTIALITY_RISK"
+  ],
+  "expectations": {
+    "required_claim_statuses": [
+      "CONTRADICTED"
+    ],
+    "required_risk_categories": [
+      "CONFIDENTIALITY"
+    ],
+    "relevance_score_range": {
+      "minimum": 70,
+      "maximum": 100
+    },
+    "personalization_score_range": {
+      "minimum": 60,
+      "maximum": 100
+    }
+  }
+}

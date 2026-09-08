@@ -2,7 +2,7 @@
 
 PitchGuard is an AI-assisted quality gate that reviews PR pitches before they are sent to journalists, detecting poor targeting, unsupported claims, weak personalization, inappropriate language, and potential reputational risks.
 
-> **Current status:** The local development scaffold, validated data and configuration models, versioned prompts, provider-independent Ollama integration, three independent pitch reviewers, their fixed concurrent workflow, deterministic decision rules, and main review API endpoint are **Implemented**. The product UI remains **Planned**. Unless explicitly marked **Implemented**, the capabilities described below are intended behavior rather than completed functionality.
+> **Current status:** The local development scaffold, validated data and configuration models, versioned prompts, provider-independent Ollama integration, three independent pitch reviewers, fixed concurrent workflow, deterministic decision rules, main review API endpoint, manual-input review interface, and three fictional deterministic evaluation cases are **Implemented**. Live-model evaluation and the optional Revision Agent remain unfinished. Unless explicitly marked **Implemented**, the capabilities described below are intended behavior rather than completed functionality.
 
 ## Overview
 
@@ -48,7 +48,7 @@ The intended report includes:
 
 ## Demo and screenshots
 
-**Implemented** — The frontend currently shows only a minimal under-development page. There is no working product demo or repository screenshot yet.
+**Implemented** — The local frontend provides the manual review form and renders complete or partial API reports. No repository screenshot or deployed demo is available yet.
 
 Deployment status: not deployed; deployment is outside the MVP scaffold scope.
 
@@ -126,7 +126,7 @@ If implemented, this agent will:
 
 ## System architecture
 
-The internal reviewer workflow is **Implemented**. It coordinates the three fixed reviewers concurrently, applies bounded per-attempt timeouts and retries, preserves partial successes, and returns structured errors. The deterministic decision engine is also **Implemented** and refuses incomplete workflows. The API assembles validated complete or partial reports; the report UI remains **Planned**.
+The internal reviewer workflow is **Implemented**. It coordinates the three fixed reviewers concurrently, applies bounded per-attempt timeouts and retries, preserves partial successes, and returns structured errors. The deterministic decision engine is also **Implemented** and refuses incomplete workflows. The API assembles validated complete or partial reports, and the frontend renders both states without inventing a decision.
 
 ```mermaid
 flowchart TD
@@ -186,12 +186,12 @@ The design is guided by six guardrails:
 
 | Area | Current choice | Status |
 | --- | --- | --- |
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | **Implemented** scaffold |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | **Implemented** manual-input form and report |
 | Backend | Python 3.14, FastAPI, Pydantic, Pydantic Settings | **Implemented** scaffold |
 | Local server | Uvicorn | **Implemented** for local API serving |
 | AI provider | Official Ollama client behind a structured-generation interface | **Implemented** provider and independent reviewer layers |
 | Backend tests | `pytest`, HTTPX, and HTTPX2 | **Implemented** for health, configuration, schemas, prompts, providers, reviewers, workflow, decision rules, and the review API |
-| Frontend tests | `[TBD: frontend test framework]` | **Planned** |
+| Frontend tests | Vitest, React Testing Library, and `user-event` | **Implemented** focused component tests |
 | Code quality | Ruff, ESLint, and TypeScript validation | **Implemented** |
 | Git hooks | Pre-commit hooks | **Optional stretch goal** |
 | CI | GitHub Actions for linting, tests, type checking, and build verification | **Implemented** configuration |
@@ -210,7 +210,8 @@ The selected Ollama model and endpoint are configured through environment variab
 | --- | --- | --- |
 | Project concept, provisional PRD, and development rules | **Implemented** | `README.md`, `docs/`, and `AGENTS.md` |
 | Minimal under-development page | **Implemented** | `frontend/src/app/page.tsx` |
-| Manual product inputs and report UI | **Planned** | No review form or report is present |
+| Manual product inputs and report UI | **Implemented** | `frontend/src/components/` |
+| Fictional manual test scenarios | **Implemented** | `manual-test-scenarios/` |
 | API health endpoint and typed response | **Implemented** | `GET /api/health` in `backend/app/main.py` |
 | Main product review API | **Implemented** | `POST /api/v1/reviews` in `backend/app/api/routes/reviews.py` |
 | Claim and Evidence Agent | **Implemented** | `backend/app/reviewers/evidence.py` |
@@ -224,7 +225,8 @@ The selected Ollama model and endpoint are configured through environment variab
 | Health endpoint test | **Implemented** | `backend/tests/test_health.py` |
 | Schema validation tests | **Implemented** | `backend/tests/test_schemas.py` |
 | Decision tests | **Implemented** | `backend/tests/decision/` |
-| Evaluation dataset | **Planned** | Only fixture and evaluation guidance is present |
+| Fictional deterministic evaluation cases | **Implemented** | `backend/tests/fixtures/evaluation/` and `backend/tests/evaluation/` |
+| Live Ollama evaluation | **Planned** | No recorded live-model results are present |
 | Revision Agent | **Optional stretch goal** | No agent implementation is present |
 | Continuous integration | **Implemented** configuration | `.github/workflows/ci.yml` |
 | Deployment | **Planned** | No deployment configuration is present |
@@ -270,6 +272,23 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
 The backend and frontend load and validate these values. A local `.env` file is optional because the current settings have safe development defaults.
 
+### Local Ollama setup
+
+Install the default model before running a review:
+
+```bash
+ollama pull qwen3:8b
+ollama list
+```
+
+On CPU-only hardware, three concurrent `qwen3:8b` reviews may exceed the current timeout. A smaller local model can be used for development:
+
+```bash
+ollama pull qwen3:4b
+```
+
+Copy `backend/.env.example` to `backend/.env`, change `OLLAMA_MODEL` to `qwen3:4b`, and restart the backend. The smaller model is expected to run faster, but its PitchGuard quality has not yet been evaluated.
+
 ## Running the application
 
 Start the API from one terminal:
@@ -305,6 +324,7 @@ Run the frontend checks:
 
 ```bash
 cd frontend
+npm run test
 npm run lint
 npm run typecheck
 npm run build
@@ -316,9 +336,9 @@ The GitHub Actions workflow runs the same checks for pushes to `main` and pull r
 
 The project will need to test both deterministic application behavior and the less predictable behavior of AI models.
 
-### Deterministic tests — **In progress**
+### Deterministic tests — **Implemented** for the current workflow
 
-The current automated suite covers schema boundaries, structured provider behavior, the three reviewers, workflow failures and retries, deterministic decision rules, API response mapping, and application lifecycle without requiring a live model. The Revision Agent safety check remains unavailable because that optional agent is not implemented.
+The current automated suite covers schema boundaries, structured provider behavior, the three reviewers, workflow failures and retries, deterministic decision rules, API response mapping, application lifecycle, and three fictional end-to-end evaluation cases without requiring a live model. The evaluation cases validate `PASS`, `REVISE`, and `BLOCK` paths through the real reviewers, workflow, and decision engine while returning fixture responses through fake providers. The Revision Agent safety check remains unavailable because that optional agent is not implemented.
 
 The critical rule suite should verify that:
 
@@ -331,23 +351,37 @@ The critical rule suite should verify that:
 - an AI provider timeout does not result in `PASS`; and
 - the Revision Agent cannot silently introduce unsupported claims.
 
-LLM responses should be mocked for deterministic unit and integration tests. Tests should cover schema boundaries, rule precedence, provider errors, and safe fallback behavior independently of a live model.
+Run only the deterministic evaluation cases with:
 
-### AI evaluation dataset — **Planned**
+```bash
+cd backend
+uv run pytest tests/evaluation
+```
 
-A small, versioned evaluation dataset should include:
+### Fictional evaluation fixtures — **Implemented**
 
-- a relevant, well-supported pitch;
+The current versioned dataset contains three concise cases:
+
+- a relevant, well-supported pitch expected to `PASS`;
+- a partially relevant pitch with an unsupported claim and actionable language risk expected to require `REVISE`; and
+- a pitch with a contradicted high-importance claim and confidential information expected to `BLOCK`.
+
+Each JSON fixture contains a validated request, mocked outputs for all three reviewers, the expected deterministic decision and reason codes, and stable score or category expectations. All names, organizations, claims, and URLs are fictional.
+
+Future evaluation coverage may add:
+
 - a pitch sent to the wrong journalist;
 - a pitch with an invented statistic;
 - a pitch that exaggerates supplied evidence;
 - a generic mass-outreach message;
-- a pitch containing sensitive information; and
-- a prompt-injection attempt embedded in user-provided text.
+- a prompt-injection attempt embedded in user-provided text; and
+- additional combinations of claim, targeting, and language failures.
 
-The dataset should preserve the expected risk labels and decision outcome for each example. Live-model evaluation can then measure whether agent outputs remain useful after prompt or model changes, while the deterministic test suite verifies that guardrails continue to operate.
+### Live Ollama evaluation — **Planned**
 
-`[TBD: evaluation metrics and acceptance thresholds]`
+Live-model evaluation remains optional and excluded from normal tests and CI. No live evaluation runner or recorded result is included yet.
+
+`[TBD: live-Ollama evaluation metrics and acceptance thresholds]`
 
 ## Example analysis
 
@@ -377,13 +411,14 @@ PitchGuard will not be a substitute for legal review, source verification, edito
 
 ## Known limitations
 
-- **No product UI yet:** End-to-end pitch analysis is available through the API, but the frontend is still an under-development page.
+- **No live-model quality baseline yet:** The interface and deterministic safeguards are implemented, but representative Ollama evaluation results are not available.
 - LLM findings can be incomplete, inconsistent, or incorrect even when their format is valid.
 - PitchGuard can evaluate only the evidence and journalist context supplied to it; it cannot guarantee real-world truth.
 - Relevance and tone are contextual judgments and require human review.
 - Structured output and deterministic rules reduce risk but do not eliminate it.
 - The system is not intended to discover or verify facts from general model knowledge.
-- `[TBD: supported input sizes, languages, and provider limits]`
+- The MVP is supported and evaluated in English only. Other languages are accepted as Unicode text but are untested and unsupported; the application does not detect or translate languages.
+- Request limits include at most 10 evidence items, 10 recent-coverage items, and a pitch from 50 to 6,000 characters. The complete field and reviewer-output limits are documented in `docs/project-decisions.md`.
 
 ## Project scope and non-goals
 
@@ -420,8 +455,8 @@ PitchGuard will not be a substitute for legal review, source verification, edito
 6. **Implemented** — Coordinate the reviewers with a fixed concurrent workflow, bounded retries, timeouts, partial results, and cancellation cleanup.
 7. **Implemented** — Implement the deterministic decision engine and its unit tests.
 8. **Implemented** — Expose the fixed workflow and deterministic decision through `POST /api/v1/reviews`, with safe partial-failure responses and lifecycle tests.
-9. **Planned** — Build the manual-input UI and explainable report view.
-10. **Planned** — Add the evaluation dataset and live-model evaluation process.
+9. **Implemented** — Build the manual-input UI and explainable complete or partial report view.
+10. **In progress** — Three deterministic evaluation fixtures are implemented; the optional live-model evaluation process remains planned.
 11. **Optional stretch goal** — Add the evidence-bounded Revision Agent.
 12. **Optional stretch goal** — Add pre-commit hooks or other carefully selected tooling.
 
@@ -465,6 +500,4 @@ PitchGuard/
 
 ## License
 
-No license file is currently present.
-
-`[TBD: project license]`
+PitchGuard is available under the MIT License. See `LICENSE` for the full terms.

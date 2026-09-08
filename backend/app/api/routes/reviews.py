@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -9,7 +8,6 @@ from app.decision import DecisionResult
 from app.schemas import AnalysisStatus, ReviewRequest, ReviewResponse
 from app.workflow import ReviewWorkflowResult
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
 
@@ -66,17 +64,13 @@ async def create_review(
     review_request: ReviewRequest,
     services: Annotated[ReviewApplicationServices, Depends(get_review_services)],
 ) -> ReviewResponse | JSONResponse:
-    try:
-        workflow_result = await services.workflow.run(review_request)
-        if not workflow_result.is_complete:
-            response = build_review_response(workflow_result, decision_result=None)
-            return JSONResponse(
-                status_code=503,
-                content=response.model_dump(mode="json"),
-            )
+    workflow_result = await services.workflow.run(review_request)
+    if not workflow_result.is_complete:
+        response = build_review_response(workflow_result, decision_result=None)
+        return JSONResponse(
+            status_code=503,
+            content=response.model_dump(mode="json"),
+        )
 
-        decision_result = services.decision_engine.evaluate(workflow_result)
-        return build_review_response(workflow_result, decision_result)
-    except Exception as error:
-        logger.error("Unexpected pitch review failure: %s", type(error).__name__)
-        raise
+    decision_result = services.decision_engine.evaluate(workflow_result)
+    return build_review_response(workflow_result, decision_result)

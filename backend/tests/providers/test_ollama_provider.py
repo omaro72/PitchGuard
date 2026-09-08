@@ -1,10 +1,11 @@
 import asyncio
+import json
 from unittest.mock import AsyncMock, Mock
 
 import httpx
 import ollama
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 import app.providers.ollama as ollama_provider_module
 from app.config import Settings
@@ -17,11 +18,16 @@ from app.providers import (
     ProviderResponseError,
     ProviderTimeoutError,
 )
+from app.schemas import EvidenceReview
 
 
 class ExampleStructuredOutput(BaseModel):
     answer: str
     score: int
+
+
+class LengthBoundedStructuredOutput(BaseModel):
+    answer: str = Field(min_length=1, max_length=2_000)
 
 
 def settings(**values: object) -> Settings:
@@ -97,6 +103,40 @@ def test_custom_generation_options_are_translated_for_ollama() -> None:
         "temperature": 0.75,
         "num_predict": 4_096,
     }
+
+
+def test_ollama_schema_omits_string_maximums_that_break_grammar_parsing() -> None:
+    client = injected_client('{"claims":[],"summary":"ok","missing_context":[]}')
+    provider = OllamaProvider(settings(), client=client)
+
+    result = asyncio.run(
+        provider.generate_structured(
+            system_prompt="Return the requested fictional result.",
+            user_prompt="Evaluate the fictional example.",
+            response_model=EvidenceReview,
+        )
+    )
+
+    schema = client.chat.await_args.kwargs["format"]
+    serialized_schema = json.dumps(schema)
+    assert '"maxLength"' not in serialized_schema
+    assert '"minLength"' in serialized_schema
+    assert result.summary == "ok"
+
+
+def test_omitted_ollama_maximum_remains_enforced_after_generation() -> None:
+    content = '{"answer":"' + "x" * 2_001 + '"}'
+    client = injected_client(content)
+    provider = OllamaProvider(settings(), client=client)
+
+    with pytest.raises(ProviderOutputValidationError):
+        asyncio.run(
+            provider.generate_structured(
+                system_prompt="Return the requested fictional result.",
+                user_prompt="Evaluate the fictional example.",
+                response_model=LengthBoundedStructuredOutput,
+            )
+        )
 
 
 def test_production_client_uses_configured_host_and_timeout(
@@ -184,17 +224,35 @@ def test_empty_response_content_is_rejected(content: str | None) -> None:
 
     assert captured.value.code == "provider_output_validation_error"
     assert captured.value.retryable is True
+    assert str(captured.value) == "The AI returned an invalid response."
+
+
+def test_malformed_json_is_rejected_without_leaking_content() -> None:
+    content = "confidential-raw-output is not JSON"
+    provider = OllamaProvider(settings(), client=injected_client(content))
+
+    with pytest.raises(ProviderOutputValidationError) as captured:
+        generate(
+            provider,
+            system_prompt="confidential-system-prompt",
+            user_prompt="confidential-user-prompt",
+        )
+
+    error_text = str(captured.value)
+    assert content not in error_text
+    assert "confidential-system-prompt" not in error_text
+    assert "confidential-user-prompt" not in error_text
+    assert isinstance(captured.value.__cause__, ValidationError)
 
 
 @pytest.mark.parametrize(
     "content",
     [
-        "confidential-raw-output is not JSON",
         '{"answer":"ok"}',
         '{"answer":"ok","score":"not-a-number"}',
     ],
 )
-def test_invalid_structured_output_is_rejected_without_leaking_content(content: str) -> None:
+def test_schema_invalid_json_is_rejected_without_leaking_content(content: str) -> None:
     provider = OllamaProvider(settings(), client=injected_client(content))
 
     with pytest.raises(ProviderOutputValidationError) as captured:
@@ -236,6 +294,7 @@ def test_connection_failure_is_mapped_and_chained_without_leaking_details(
     assert captured.value.status_code is None
     assert captured.value.__cause__ is original_error
     assert "confidential-connection-detail" not in str(captured.value)
+    assert str(captured.value) == "The local AI service is unavailable."
 
 
 def test_timeout_is_mapped_and_chained() -> None:
@@ -254,9 +313,10 @@ def test_timeout_is_mapped_and_chained() -> None:
     assert captured.value.retryable is True
     assert captured.value.__cause__ is original_error
     assert "confidential-timeout-detail" not in str(captured.value)
+    assert str(captured.value) == "The local AI service timed out."
 
 
-def test_model_not_found_is_mapped_with_safe_pull_guidance() -> None:
+def test_model_not_found_is_non_retryable_and_does_not_expose_configuration() -> None:
     client = injected_client()
     original_error = ollama.ResponseError("confidential-response-body", status_code=404)
     client.chat.side_effect = original_error
@@ -269,11 +329,12 @@ def test_model_not_found_is_mapped_with_safe_pull_guidance() -> None:
     assert captured.value.retryable is False
     assert captured.value.status_code == 404
     assert captured.value.__cause__ is original_error
-    assert "ollama pull example/model:latest" in str(captured.value)
+    assert str(captured.value) == "The configured local AI model is unavailable."
+    assert "example/model:latest" not in str(captured.value)
     assert "confidential-response-body" not in str(captured.value)
 
 
-def test_other_response_failure_preserves_status_without_leaking_response() -> None:
+def test_server_error_preserves_status_without_leaking_response() -> None:
     client = injected_client()
     original_error = ollama.ResponseError("confidential-response-body", status_code=503)
     client.chat.side_effect = original_error
@@ -285,6 +346,22 @@ def test_other_response_failure_preserves_status_without_leaking_response() -> N
     assert captured.value.code == "provider_response_error"
     assert captured.value.retryable is True
     assert captured.value.status_code == 503
+    assert captured.value.__cause__ is original_error
+    assert "confidential-response-body" not in str(captured.value)
+    assert str(captured.value) == "The local AI service returned an error."
+
+
+def test_response_failure_without_status_is_mapped_safely() -> None:
+    client = injected_client()
+    original_error = ollama.ResponseError("confidential-response-body", status_code=0)
+    client.chat.side_effect = original_error
+    provider = OllamaProvider(settings(), client=client)
+
+    with pytest.raises(ProviderResponseError) as captured:
+        generate(provider)
+
+    assert captured.value.status_code is None
+    assert captured.value.retryable is True
     assert captured.value.__cause__ is original_error
     assert "confidential-response-body" not in str(captured.value)
 

@@ -70,7 +70,7 @@ def test_dates_urls_and_confidentiality_flags_are_json_compatible(
 def test_non_ascii_quotes_line_breaks_and_backslashes_round_trip(
     review_request: ReviewRequest,
 ) -> None:
-    pitch = 'Hola, señor. "Café Ñandú"\nPath C:\\fictional\\pitch'
+    pitch = 'Hola, señor. "Café Ñandú"\nPath C:\\fictional\\pitch.'
     request = changed_request(review_request, pitch=pitch)
     user_prompt = build_evidence_input(request)
 

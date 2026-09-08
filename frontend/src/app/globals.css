@@ -13,5 +13,21 @@
 
 body {
   margin: 0;
-  background: #f8fafc;
+  background:
+    radial-gradient(circle at top right, rgb(207 250 254 / 55%), transparent 32rem),
+    #f8fafc;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+meter::-webkit-meter-optimum-value {
+  background: #0e7490;
+}
+
+meter::-moz-meter-bar {
+  background: #0e7490;
 }

@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Callable
 from typing import cast
 
@@ -10,6 +9,7 @@ from app.config import Settings
 from app.decision import DecisionFinding, DecisionReasonCode, DecisionResult
 from app.decision.engine import DecisionEngine
 from app.main import create_app
+from app.providers.errors import ProviderOutputValidationError
 from app.providers.ollama import OllamaProvider
 from app.schemas import (
     AnalysisStatus,
@@ -21,7 +21,8 @@ from app.schemas import (
     ReviewRequest,
     RiskReview,
 )
-from app.workflow import ReviewWorkflow, ReviewWorkflowResult
+from app.workflow import ReviewWorkflow, ReviewWorkflowPolicy, ReviewWorkflowResult
+from tests.workflow.conftest import FakeReviewer
 
 
 class FakeProvider:
@@ -269,9 +270,68 @@ def test_application_reuses_services_and_closes_provider_on_shutdown() -> None:
     assert provider.close_count == 1
 
 
-def test_unexpected_exception_is_reraised_without_logging_sensitive_input(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
+def test_expected_provider_failure_reaches_safe_partial_response() -> None:
+    complete_result = complete_workflow_result()
+    raw_model_output = "confidential raw model output"
+    full_prompt = "confidential full system prompt"
+    internal_response_body = "confidential internal Ollama response body"
+    try:
+        raise ProviderOutputValidationError() from ValueError(
+            f"{raw_model_output} {full_prompt} {internal_response_body}"
+        )
+    except ProviderOutputValidationError as provider_error:
+        workflow = ReviewWorkflow(
+            FakeReviewer[EvidenceReview]([provider_error]),
+            FakeReviewer([complete_result.relevance_review]),
+            FakeReviewer([complete_result.risk_review]),
+            ReviewWorkflowPolicy(max_attempts=1),
+        )
+
+    provider = FakeProvider()
+    decision_engine = FakeDecisionEngine(revise_decision())
+    services = ReviewApplicationServices(
+        provider=cast(OllamaProvider, provider),
+        workflow=workflow,
+        decision_engine=cast(DecisionEngine, decision_engine),
+    )
+    application = create_app(
+        Settings(_env_file=None),
+        review_services_factory=lambda _: services,
+    )
+    request_body = valid_request_body()
+
+    with TestClient(application) as client:
+        response = client.post("/api/v1/reviews", json=request_body)
+
+    body = response.json()
+    response_text = response.text
+    assert response.status_code == 503
+    assert body["analysis_status"] == "ERROR"
+    assert body["decision"] is None
+    assert body["evidence_review"] is None
+    assert body["relevance_review"] is not None
+    assert body["risk_review"] is not None
+    assert body["errors"] == [
+        {
+            "reviewer": "EVIDENCE",
+            "code": "provider_output_validation_error",
+            "message": "The AI returned an invalid response.",
+            "retryable": True,
+        }
+    ]
+    assert decision_engine.call_count == 0
+    assert raw_model_output not in response_text
+    assert full_prompt not in response_text
+    assert internal_response_body not in response_text
+    assert str(request_body["pitch"]) not in response_text
+    evidence = cast(list[dict[str, object]], request_body["evidence"])
+    assert str(evidence[0]["content"]) not in response_text
+    assert "Traceback" not in response_text
+    assert "http://localhost:11434" not in response_text
+    assert "qwen3:8b" not in response_text
+
+
+def test_unexpected_exception_is_reraised_without_becoming_a_reviewer_error() -> None:
     sensitive_pitch = "Private fictional acquisition details must stay confidential."
     programming_error = RuntimeError(
         f"Unexpected reviewer wiring failure while processing: {sensitive_pitch}"
@@ -281,7 +341,6 @@ def test_unexpected_exception_is_reraised_without_logging_sensitive_input(
     request_body["pitch"] = sensitive_pitch
 
     with (
-        caplog.at_level(logging.ERROR, logger="app.api.routes.reviews"),
         client_factory() as client,
         pytest.raises(RuntimeError, match="Unexpected reviewer wiring failure"),
     ):
@@ -289,8 +348,6 @@ def test_unexpected_exception_is_reraised_without_logging_sensitive_input(
 
     assert workflow.call_count == 1
     assert decision_engine.call_count == 0
-    assert "Unexpected pitch review failure: RuntimeError" in caplog.text
-    assert sensitive_pitch not in caplog.text
 
 
 def test_review_endpoint_has_structured_openapi_documentation() -> None:

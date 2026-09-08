@@ -1,0 +1,86 @@
+{
+  "case_id": "pass_case",
+  "fictional": true,
+  "request": {
+    "campaign": {
+      "company_name": "Fictional company Nimbus Finch Labs",
+      "announcement": "Nimbus Finch Labs is publishing results from a fictional support-operations pilot.",
+      "target_audience": "Readers interested in fictional workplace operations research"
+    },
+    "evidence": [
+      {
+        "id": "E1",
+        "source": "Fictional supervised pilot summary",
+        "content": "A fictional Nimbus Finch Labs pilot included 60 volunteer participants and recorded 18% less time spent sorting incoming requests.",
+        "confidential": false
+      }
+    ],
+    "journalist": {
+      "name": "Fictional journalist Rowan Vale",
+      "publication": "The Fictional Signal",
+      "beat": "Workplace operations and responsible business software",
+      "recent_coverage": [
+        {
+          "id": "C1",
+          "title": "Fictional support teams test simpler request routing",
+          "summary": "A fictional article about measured improvements in support-team operations.",
+          "publication_date": "2026-08-14",
+          "url": "https://example.com/fictional/support-operations"
+        }
+      ]
+    },
+    "pitch": "Hello Rowan, your fictional article about support operations closely matches our research. Nimbus Finch Labs' fictional pilot included 60 volunteer participants and recorded 18% less time spent sorting incoming requests. Would you like the fictional pilot summary?"
+  },
+  "mocked_outputs": {
+    "evidence_review": {
+      "claims": [
+        {
+          "claim_text": "Nimbus Finch Labs' fictional pilot included 60 volunteer participants and recorded 18% less time spent sorting incoming requests",
+          "claim_type": "STATISTIC",
+          "importance": "MEDIUM",
+          "status": "SUPPORTED",
+          "explanation": "The participant count and measured reduction match fictional evidence E1.",
+          "evidence_ids": [
+            "E1"
+          ]
+        }
+      ],
+      "summary": "The measurable fictional claim matches the supplied pilot summary.",
+      "missing_context": []
+    },
+    "relevance_review": {
+      "relevance_score": 88,
+      "personalization_score": 82,
+      "summary": "The fictional campaign matches the journalist's supplied beat and cited coverage.",
+      "matched_topics": [
+        "workplace operations",
+        "measured support-team improvements"
+      ],
+      "mismatches": [],
+      "missing_context": []
+    },
+    "risk_review": {
+      "findings": [],
+      "summary": "No material language or reputational risk appears in the fictional pitch.",
+      "missing_context": []
+    }
+  },
+  "expected_decision": "PASS",
+  "expected_reason_codes": [
+    "PASS_QUALITY_GATE_CLEAR"
+  ],
+  "expectations": {
+    "required_claim_statuses": [
+      "SUPPORTED"
+    ],
+    "required_risk_categories": [],
+    "relevance_score_range": {
+      "minimum": 80,
+      "maximum": 100
+    },
+    "personalization_score_range": {
+      "minimum": 70,
+      "maximum": 100
+    }
+  }
+}

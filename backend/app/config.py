@@ -62,7 +62,7 @@ class Settings(BaseSettings):
 
     app_env: AppEnvironment = AppEnvironment.DEVELOPMENT
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: OllamaModelName = "qwen3:8b"
+    ollama_model: OllamaModelName = "qwen3:4b"
     ollama_timeout_seconds: int = Field(default=120, ge=1, le=600)
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:3000"],

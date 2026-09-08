@@ -239,7 +239,7 @@ def test_one_expected_failure_preserves_other_results(
         evidence_outcome: EvidenceReview | Exception = evidence_review
         relevance_outcome: RelevanceReview | Exception = relevance_review
         risk_outcome: RiskReview | Exception = risk_review
-        failure = ProviderModelNotFoundError("fictional-model")
+        failure = ProviderModelNotFoundError()
         if failed_reviewer is ReviewerName.EVIDENCE:
             evidence_outcome = failure
         elif failed_reviewer is ReviewerName.RELEVANCE:
@@ -281,15 +281,15 @@ def test_all_expected_failures_are_ordered_without_duplicates(
         relevance_gate = asyncio.Event()
         risk_gate = asyncio.Event()
         evidence = FakeReviewer[EvidenceReview](
-            [ProviderModelNotFoundError("fictional-model")],
+            [ProviderModelNotFoundError()],
             finish_gate=evidence_gate,
         )
         relevance = FakeReviewer[RelevanceReview](
-            [ProviderModelNotFoundError("fictional-model")],
+            [ProviderModelNotFoundError()],
             finish_gate=relevance_gate,
         )
         risk = FakeReviewer[RiskReview](
-            [ProviderModelNotFoundError("fictional-model")],
+            [ProviderModelNotFoundError()],
             finish_gate=risk_gate,
         )
         task = asyncio.create_task(
@@ -387,7 +387,7 @@ def test_non_retryable_failure_is_not_retried(
     risk_review: RiskReview,
 ) -> None:
     async def scenario() -> None:
-        evidence = FakeReviewer[EvidenceReview]([ProviderModelNotFoundError("fictional-model")])
+        evidence = FakeReviewer[EvidenceReview]([ProviderModelNotFoundError()])
 
         result = await ReviewWorkflow(
             evidence,
@@ -429,6 +429,45 @@ def test_reviewer_contract_error_uses_its_retryability(
         assert evidence.call_count == 2
         assert result.is_complete is True
         assert result.errors == []
+
+    asyncio.run(scenario())
+
+
+def test_semantically_invalid_output_becomes_a_final_reviewer_error(
+    review_request: ReviewRequest,
+    relevance_review: RelevanceReview,
+    risk_review: RiskReview,
+) -> None:
+    async def scenario() -> None:
+        contract_message = "Evidence reviewer returned an evidence reference that was not supplied."
+        contract_error = ReviewerContractError(
+            reviewer=ReviewerName.EVIDENCE,
+            code="invalid_evidence_reference",
+            message=contract_message,
+            retryable=True,
+        )
+        evidence = FakeReviewer[EvidenceReview]([contract_error])
+
+        result = await ReviewWorkflow(
+            evidence,
+            FakeReviewer([relevance_review]),
+            FakeReviewer([risk_review]),
+            ReviewWorkflowPolicy(max_attempts=2, retry_delay_seconds=0),
+        ).run(review_request)
+
+        assert evidence.call_count == 2
+        assert result.evidence_review is None
+        assert result.relevance_review is relevance_review
+        assert result.risk_review is risk_review
+        assert result.errors == [
+            ReviewerError(
+                reviewer=ReviewerName.EVIDENCE,
+                code="invalid_evidence_reference",
+                message=contract_message,
+                retryable=True,
+            )
+        ]
+        assert result.is_complete is False
 
     asyncio.run(scenario())
 

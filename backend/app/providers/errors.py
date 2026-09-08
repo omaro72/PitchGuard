@@ -17,7 +17,7 @@ class ProviderError(Exception):
 class ProviderConnectionError(ProviderError):
     def __init__(self) -> None:
         super().__init__(
-            "Could not connect to Ollama. Confirm the local service is running and reachable.",
+            "The local AI service is unavailable.",
             code="provider_connection_error",
             retryable=True,
         )
@@ -26,16 +26,16 @@ class ProviderConnectionError(ProviderError):
 class ProviderTimeoutError(ProviderError):
     def __init__(self) -> None:
         super().__init__(
-            "Ollama did not respond before the configured timeout.",
+            "The local AI service timed out.",
             code="provider_timeout_error",
             retryable=True,
         )
 
 
 class ProviderModelNotFoundError(ProviderError):
-    def __init__(self, model: str, status_code: int = 404) -> None:
+    def __init__(self, status_code: int = 404) -> None:
         super().__init__(
-            f"The configured Ollama model is unavailable. Run `ollama pull {model}` to install it.",
+            "The configured local AI model is unavailable.",
             code="provider_model_not_found_error",
             retryable=False,
             status_code=status_code,
@@ -44,10 +44,9 @@ class ProviderModelNotFoundError(ProviderError):
 
 class ProviderResponseError(ProviderError):
     def __init__(self, status_code: int | None = None) -> None:
-        status_detail = f" with HTTP status {status_code}" if status_code is not None else ""
         retryable = status_code is None or status_code == 429 or status_code >= 500
         super().__init__(
-            f"Ollama returned an unsuccessful response{status_detail}.",
+            "The local AI service returned an error.",
             code="provider_response_error",
             retryable=retryable,
             status_code=status_code,
@@ -57,7 +56,7 @@ class ProviderResponseError(ProviderError):
 class ProviderOutputValidationError(ProviderError):
     def __init__(self) -> None:
         super().__init__(
-            "Ollama returned empty or invalid structured output.",
+            "The AI returned an invalid response.",
             code="provider_output_validation_error",
             retryable=True,
         )

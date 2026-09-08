@@ -13,6 +13,19 @@ from app.providers.errors import (
 )
 
 
+def _ollama_compatible_schema(response_model: type[ResponseModelT]) -> dict[str, object]:
+    schema = response_model.model_json_schema()
+    pending: list[object] = [schema]
+    while pending:
+        value = pending.pop()
+        if isinstance(value, dict):
+            value.pop("maxLength", None)
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+    return schema
+
+
 class OllamaProvider:
     def __init__(
         self,
@@ -54,7 +67,7 @@ class OllamaProvider:
                 ],
                 stream=False,
                 think=False,
-                format=response_model.model_json_schema(),
+                format=_ollama_compatible_schema(response_model),
                 options={
                     "temperature": generation_options.temperature,
                     "num_predict": generation_options.max_output_tokens,
@@ -67,7 +80,7 @@ class OllamaProvider:
         except ollama.ResponseError as error:
             status_code = error.status_code if error.status_code >= 100 else None
             if status_code == 404:
-                raise ProviderModelNotFoundError(self._model, status_code) from error
+                raise ProviderModelNotFoundError(status_code) from error
             raise ProviderResponseError(status_code) from error
 
         content = response.message.content

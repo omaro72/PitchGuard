@@ -236,6 +236,85 @@ def test_text_over_maximum_length_is_rejected() -> None:
         CampaignBrief.model_validate(data)
 
 
+@pytest.mark.parametrize(
+    ("field_name", "maximum"),
+    [
+        ("company_name", 120),
+        ("announcement", 2_000),
+        ("target_audience", 500),
+    ],
+)
+def test_campaign_text_limits(field_name: str, maximum: int) -> None:
+    data = campaign_data()
+    data[field_name] = "é" * maximum
+
+    assert getattr(CampaignBrief.model_validate(data), field_name) == data[field_name]
+
+    data[field_name] = "é" * (maximum + 1)
+    with pytest.raises(ValidationError):
+        CampaignBrief.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "maximum"),
+    [("source", 300), ("content", 3_000)],
+)
+def test_evidence_text_limits(field_name: str, maximum: int) -> None:
+    data = evidence_data()
+    data[field_name] = "é" * maximum
+
+    assert getattr(EvidenceItem.model_validate(data), field_name) == data[field_name]
+
+    data[field_name] = "é" * (maximum + 1)
+    with pytest.raises(ValidationError):
+        EvidenceItem.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "maximum"),
+    [("title", 300), ("summary", 1_000)],
+)
+def test_coverage_text_limits(field_name: str, maximum: int) -> None:
+    data = coverage_data()
+    data[field_name] = "é" * maximum
+
+    assert getattr(CoverageItem.model_validate(data), field_name) == data[field_name]
+
+    data[field_name] = "é" * (maximum + 1)
+    with pytest.raises(ValidationError):
+        CoverageItem.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "maximum"),
+    [("name", 120), ("publication", 160), ("beat", 500)],
+)
+def test_journalist_text_limits(field_name: str, maximum: int) -> None:
+    data = journalist_data()
+    data[field_name] = "é" * maximum
+
+    assert getattr(JournalistProfile.model_validate(data), field_name) == data[field_name]
+
+    data[field_name] = "é" * (maximum + 1)
+    with pytest.raises(ValidationError):
+        JournalistProfile.model_validate(data)
+
+
+def test_pitch_length_limits() -> None:
+    data = review_request_data()
+    data["pitch"] = "é" * 50
+
+    assert ReviewRequest.model_validate(data).pitch == data["pitch"]
+
+    data["pitch"] = "é" * 49
+    with pytest.raises(ValidationError):
+        ReviewRequest.model_validate(data)
+
+    data["pitch"] = "é" * 6_001
+    with pytest.raises(ValidationError):
+        ReviewRequest.model_validate(data)
+
+
 @pytest.mark.parametrize("item_id", ["E0", "e1", "evidence-1", "E-1"])
 def test_invalid_evidence_id_is_rejected(item_id: str) -> None:
     with pytest.raises(ValidationError):
@@ -274,12 +353,26 @@ def test_more_than_ten_evidence_items_are_rejected() -> None:
         ReviewRequest.model_validate(data)
 
 
+def test_ten_evidence_items_are_accepted() -> None:
+    data = review_request_data()
+    data["evidence"] = [evidence_data(f"E{index}") for index in range(1, 11)]
+
+    assert len(ReviewRequest.model_validate(data).evidence) == 10
+
+
 def test_more_than_ten_coverage_items_are_rejected() -> None:
     data = journalist_data()
     data["recent_coverage"] = [coverage_data(f"C{index}") for index in range(1, 12)]
 
     with pytest.raises(ValidationError):
         JournalistProfile.model_validate(data)
+
+
+def test_ten_coverage_items_are_accepted() -> None:
+    data = journalist_data()
+    data["recent_coverage"] = [coverage_data(f"C{index}") for index in range(1, 11)]
+
+    assert len(JournalistProfile.model_validate(data).recent_coverage) == 10
 
 
 def test_unexpected_fields_are_rejected() -> None:

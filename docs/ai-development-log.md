@@ -2,6 +2,272 @@
 
 This log records meaningful AI-assisted development tasks without implying that generated work was accepted without review.
 
+## 2026-09-07 — Ollama grammar compatibility fix
+
+### Goal
+
+Diagnose and fix the shared `provider_response_error` returned by all three live Ollama reviewers.
+
+### Instructions given to the AI coding tool
+
+Explain the failure in beginner-friendly terms, verify the local services and configured model, reproduce the error without exposing submitted content or raw model output, apply a focused fix when supported by evidence, and provide practical local-running guidance.
+
+### Generated changes reviewed
+
+The coding agent inspected the provider call, safe exception mapping, reviewer schemas, workflow path, Ollama configuration, and installed model state. It compared a minimal structured request with a real fictional reviewer request and isolated the incompatible JSON Schema keyword. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- Ollama, the backend, and `qwen3:8b` were installed and reachable, so service availability was not the cause.
+- A minimal structured response succeeded, while each real reviewer received HTTP 400 because Ollama could not parse the generated grammar.
+- The failure was triggered by large `maxLength` constraints in the Pydantic JSON Schema sent to Ollama.
+- After the grammar failure was removed, one reviewer completed in 42.5 seconds, but the three concurrent `qwen3:8b` reviewers exceeded the workflow timeout on CPU-only execution.
+
+### Corrections made
+
+- Removed `maxLength` keywords only from the provider-specific schema passed to Ollama.
+- Preserved all Pydantic response validation, including the original maximum lengths, after generation.
+- Added regression tests for recursive schema cleanup and post-generation length rejection.
+- Added README instructions for installing the default model and using the smaller `qwen3:4b` model on slower CPU-only hardware.
+
+### Verification performed
+
+- The new regression test failed before the provider fix and passed afterward.
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed for 58 Python files.
+- `uv run pytest` passed: 297 tests passed and one live-Ollama test was skipped by default.
+- A minimal live structured Ollama request passed.
+- A real Claim and Evidence review using fictional data passed after the fix.
+- A full three-reviewer request using `qwen3:8b` reached generation but returned `provider_timeout_error` on the current CPU-only execution path.
+
+### Remaining limitations
+
+- `qwen3:8b` is too slow for the current concurrent timeout on this machine when running entirely on the CPU.
+- `qwen3:4b` is the recommended local development alternative but has not yet been evaluated for PitchGuard quality.
+- Live-model evaluation metrics and acceptance thresholds remain `[TBD]`.
+
+## 2026-09-07 — Fictional manual test scenarios
+
+### Goal
+
+Give a developer without PR-sector experience copy-ready fictional inputs for manually exercising varied PitchGuard outcomes and safety behavior.
+
+### Instructions given to the AI coding tool
+
+Create a project folder containing separate Markdown scenarios with campaign, evidence, journalist, recent coverage, and pitch fields; keep the data fictional; cover varied review outcomes; and explain a beginner-friendly alternative to the PR term `beat`.
+
+### Generated changes reviewed
+
+The coding agent reviewed the current form fields, Pydantic request limits, evidence and coverage ID rules, deterministic decision thresholds, risk categories, and English-only MVP decision. It reviewed each scenario for internal consistency, fictional data, copy-ready field values, and a clearly qualified expected outcome. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- The PR term `beat` may be unclear to users outside the industry.
+- Existing automated JSON fixtures are useful for deterministic tests but are not formatted for manual copying into the frontend.
+- Live model scores and classifications can vary, so a scenario must not present its expected signals as recorded results.
+
+### Corrections made
+
+- Used `Beat / topics covered` in every scenario while preserving the current backend field name.
+- Added eight independent scenarios spanning supported claims, unsupported and contradicted claims, wrong targeting, generic personalization, confidentiality, promotional language, and prompt injection.
+- Marked every person, organization, publication, fact, and URL as fictional and every outcome as an expectation.
+
+### Verification performed
+
+- Confirmed that all eight Markdown files contain the required campaign, evidence, journalist, recent-coverage, pitch, and expected-signal sections.
+- Checked IDs, required text lengths, optional empty lists, and reserved `example.test` URLs against the current request contract.
+
+### Remaining limitations
+
+- The scenarios have not been run against live Ollama and contain no claimed evaluation results.
+- Live-model wording, scores, classifications, and non-deterministic outcomes may vary.
+
+## 2026-09-07 — Finalized MVP decisions
+
+### Goal
+
+Finalize the MVP decision thresholds, request limits, language support, frontend testing tools, and license while preserving existing claim, risk, workflow, and product-scope choices.
+
+### Instructions given to the AI coding tool
+
+Inspect existing code and documentation for unfinished or conflicting decisions; keep the established deterministic policy; enforce the specified request limits in Pydantic and mirror them in the form; support and evaluate English only without rejecting Unicode; add focused mocked-fetch frontend tests; add an MIT license; document the decisions; run all checks; and create one focused commit only after review.
+
+### Generated changes reviewed
+
+The coding agent inspected the decision policy and boundary tests, Pydantic request models, form controls, report and API client, CI workflow, package manifests, PRD, README, and active `[TBD]` entries. It reviewed the added schema-boundary and component tests, dependency changes, license text, decision record, and resulting diff. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- The decision thresholds and required boundary tests were already implemented correctly and did not need a new policy layer.
+- Several backend request limits and matching form attributes conflicted with the finalized values.
+- No frontend test setup existed.
+- Current Vitest and Vite packages require Node 24 type definitions, matching the project's Node 24 prerequisite.
+- Vite reported that TypeScript path resolution is built in, so an initially installed helper package was unnecessary.
+- Character-by-character input in the first payload test exceeded the default test timeout.
+
+### Corrections made
+
+- Preserved the existing decision engine and its `BLOCK > REVISE > PASS` precedence.
+- Applied the finalized input limits in backend schemas and matching browser attributes.
+- Added Unicode-aware boundary tests and retained unique ID, URL, claim, and risk validation.
+- Added Vitest, React Testing Library, `user-event`, `jsdom`, mocked-fetch component tests, and a CI test step.
+- Removed the redundant path-resolution package and used Vite's native setting.
+- Used direct input change events for the payload test while retaining `user-event` for user interactions.
+- Added the MIT license and a concise MVP decisions document, then resolved the related README and PRD placeholders.
+
+### Verification performed
+
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed for 58 Python files.
+- `uv run pytest` passed: 295 tests passed and the existing live-Ollama test was skipped.
+- `npm run test` passed: 9 frontend tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed and prerendered the root route.
+
+### Remaining limitations
+
+- Live-Ollama evaluation metrics, acceptance thresholds, and representative baseline results remain `[TBD]`.
+- Frontend tests use `jsdom`; full browser and accessibility audits have not been added.
+- The Revision Agent remains an optional stretch goal.
+
+## 2026-09-07 — Fictional review evaluation fixtures
+
+### Goal
+
+Add concise fictional `PASS`, `REVISE`, and `BLOCK` cases that validate real data contracts and deterministic review behavior without Ollama, network access, or real personal data.
+
+### Instructions given to the AI coding tool
+
+Reuse the current request, reviewer-output, workflow, and decision models; store readable JSON fixtures with mocked outputs and stable expectations; use existing fake-provider infrastructure; test the real reviewers, concurrent workflow, semantic validation, and deterministic decision engine; document the deterministic command; and keep live Ollama evaluation optional and outside CI.
+
+### Generated changes reviewed
+
+The coding agent inspected the repository rules, PRD, Pydantic schemas, reviewer validators, provider test doubles, workflow, decision policy and reason codes, current test layout, and evaluation documentation. It reviewed every fictional request, evidence reference, pitch excerpt, score range, expected category, and reason code. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- The root fixture and evaluation documents still described all evaluation data as future work.
+- The existing `RecordingProvider` supports one typed result, so each real reviewer needs its own provider instance when a full fixture case is executed.
+- A passing `DecisionResult` exposes `PASS_QUALITY_GATE_CLEAR` through `pass_reason_code`, while blocking and revision reasons are exposed through `reason_codes`.
+- Exact AI wording would be unstable for a future live evaluation and should not become a deterministic expectation.
+
+### Corrections made
+
+- Added three explicitly fictional JSON fixtures containing valid requests, schema-valid mocked reviewer outputs, expected decisions and reason codes, and stable claim, risk, and score expectations.
+- Reused one existing `RecordingProvider` per real reviewer and ran all three reviewers through the real concurrent workflow and decision engine.
+- Compared decision codes as sets so fixture array order is not part of the test contract.
+- Added a small validated loader with clear failures for malformed JSON and schema-invalid fixture data.
+- Updated the README, PRD, fixture guidance, and evaluation guidance to separate implemented deterministic cases from planned optional live-model evaluation.
+
+### Verification performed
+
+- `uv run pytest tests/evaluation` passed: 6 tests.
+- `uv run pytest` passed: 282 tests and one skipped opt-in Ollama integration test.
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed for 58 Python files.
+- No frontend source, dependency, or configuration changed, so frontend checks were not rerun.
+- No live Ollama, internet, or other external service was used.
+
+### Remaining limitations
+
+- Live Ollama evaluation remains optional and is not implemented or recorded.
+- The deterministic dataset currently contains three baseline cases; wrong-target, invented-statistic, mass-outreach, and prompt-injection cases remain possible future additions.
+- Evaluation metrics and acceptance thresholds remain `[TBD: evaluation metrics and acceptance thresholds]`.
+
+## 2026-09-07 — Safe AI failure handling
+
+### Goal
+
+Harden the existing Ollama-to-frontend error path so unavailable services, timeouts, server failures, missing models, invalid structured output, and semantically invalid reviewer results fail closed without losing successful partial reviews.
+
+### Instructions given to the AI coding tool
+
+Extend the existing provider and reviewer exception architecture; retain bounded retry behavior; preserve cancellation and unexpected programming errors; return structured `503` responses with no decision for incomplete workflows; keep sensitive prompts, content, model output, configuration, response bodies, and stack traces out of API responses; and verify the backend and frontend without adding services or dependencies.
+
+### Generated changes reviewed
+
+The coding agent traced the provider, reviewer validation, concurrent workflow, decision boundary, API response mapper, frontend report, and existing tests. It reviewed stable error codes, retryability, model-response parsing, semantic validation, partial-result preservation, cancellation cleanup, public messages, and API serialization. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- The model-not-found message included the configured model name, which is an environment value and should not reach the client.
+- Provider messages exposed implementation-specific Ollama and HTTP details even though the frontend only needs short recovery guidance.
+- The API caught every exception only to log its type and re-raise it, adding no behavior while widening the error-handling surface.
+- Malformed JSON and schema-invalid JSON shared coverage under one broad test name, making the two required cases harder to audit.
+- No frontend test framework is configured.
+
+### Corrections made
+
+- Preserved the existing provider exception classes, stable codes, retry flags, and internal status codes while replacing their public messages with short safe text.
+- Removed the model name from `ProviderModelNotFoundError` and kept that failure non-retryable.
+- Kept empty, malformed, and schema-invalid output under the existing `provider_output_validation_error` code because they share the same safe handling and retry policy.
+- Removed the unnecessary broad API exception catch so programming errors and cancellation continue to propagate normally.
+- Added focused regression coverage for malformed JSON, schema-invalid JSON, safe model-not-found handling, server failures, semantic reviewer failures, partial API results, sensitive-data exclusion, retry limits, and the incomplete-workflow decision boundary.
+
+### Verification performed
+
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed.
+- `uv run pytest` passed: 276 tests and one skipped opt-in Ollama integration test.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed and prerendered the root route.
+- No live Ollama, internet, or other external service was used by the normal test suite.
+
+### Remaining limitations
+
+- The live Ollama integration test remains opt-in and was not run.
+- The frontend has no automated component test framework; its existing partial-result rendering compiled successfully but was not re-exercised in a browser for this task.
+- Live-model quality and response time remain unverified.
+
+## 2026-09-07 — Frontend pitch review form and report
+
+### Goal
+
+Build the first usable manual-input interface for the existing review API and render complete, partial, validation-error, and connection-error outcomes without adding product scope or frontend dependencies.
+
+### Instructions given to the AI coding tool
+
+Use the existing Next.js App Router, TypeScript, Tailwind CSS, and public API-base configuration; match the backend request and response fields; provide dynamic evidence and coverage inputs with stable IDs; submit to `POST /api/v1/reviews`; display every reviewer result and safe error; preserve editable form values; and keep the final decision entirely backend-controlled.
+
+### Generated changes reviewed
+
+The coding agent inspected the repository rules, frontend-specific Next.js guidance, installed Next.js 16 documentation, current frontend source, environment configuration, backend Pydantic schemas, review route, Git history, and Codebase Memory coverage. It reviewed the client boundary, request serialization, response-state handling, stable ID generation, browser validation attributes, accessible field structure, complete and partial report rendering, responsive classes, and status documentation. Human developer review remains required.
+
+### Problems or incorrect assumptions found
+
+- No frontend test framework or test command is configured, so adding component tests would have required new tooling outside this task.
+- The session exposed no browser surface for interactive visual testing.
+- The sandbox initially prevented the Next.js development server from spawning its worker process.
+- Next.js development mode regenerated an HTML-comment block in `frontend/AGENTS.md`, conflicting with the repository's zero-comments rule.
+
+### Corrections made
+
+- Kept the page as a Server Component and isolated state, event handlers, and browser fetch behavior in one focused Client Component.
+- Used read-only monotonic `E` and `C` IDs so removal never renumbers an existing item or creates a duplicate.
+- Converted `422` details to safe field guidance and used generic messages for malformed, server, and network failures.
+- Returned structured `503` responses to the report so successful partial results remain visible with no invented decision.
+- Reran the development server with approved process access, disabled Next.js agent-file generation, and restored `frontend/AGENTS.md` unchanged.
+- Used a temporary local manual-verification harness and removed it after verification.
+
+### Verification performed
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed and prerendered the root route.
+- Development-server HTML contained the campaign, evidence, journalist, coverage, pitch, submit, and report-empty-state content.
+- A temporary local harness verified the exact `ReviewRequest` payload, complete report rendering, structured partial-error rendering with preserved results, safe `422` feedback, generic server and network failures, and retry controls.
+- No live Ollama or external network request was made.
+
+### Remaining limitations
+
+- Interactive browser and viewport testing could not be performed because no browser was available in the session.
+- The frontend has no automated component test framework.
+- Live-model quality and response time remain unverified.
+- The optional Revision Agent and evaluation dataset remain unimplemented.
+- Human developer review is still required.
+
 ## 2026-09-06 — Main pitch review API endpoint
 
 ### Goal

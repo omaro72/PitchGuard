@@ -1,21 +1,31 @@
+import { PitchReviewWorkspace } from "@/components/pitch-review-workspace";
+import { env } from "@/lib/env";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <section className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-10 shadow-sm">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-          Under development
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-950">
-          PitchGuard
-        </h1>
-        <p className="mt-4 text-xl leading-8 text-slate-700">
-          AI-assisted preflight review for PR pitches
-        </p>
-        <p className="mt-6 text-base leading-7 text-slate-600">
-          The project scaffold is ready. Product functionality is currently
-          under development.
-        </p>
-      </section>
+    <main className="min-h-screen px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-10 max-w-3xl">
+          <div className="mb-5 flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-800 text-lg font-black text-white shadow-sm"
+            >
+              P
+            </span>
+            <span className="text-sm font-bold uppercase tracking-[0.18em] text-cyan-800">
+              PitchGuard
+            </span>
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+            Review a PR pitch before it reaches a journalist.
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-slate-600">
+            Compare the draft with supplied evidence and journalist context. PitchGuard combines three focused AI reviews with deterministic decision rules.
+          </p>
+        </header>
+        <PitchReviewWorkspace apiBaseUrl={env.apiBaseUrl} />
+      </div>
     </main>
   );
 }

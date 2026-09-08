@@ -1,6 +1,6 @@
 # PitchGuard provisional product requirements
 
-> **Status: In progress.** This document defines intended MVP behavior. The repository scaffold, health check, review data schemas, validated environment configuration, versioned prompts, structured-generation provider, three independent reviewers, their fixed concurrent workflow, deterministic decision engine, and main review API endpoint are implemented. The product UI remains unimplemented.
+> **Status: In progress.** This document defines intended MVP behavior. The repository scaffold, health check, review data schemas, validated environment configuration, versioned prompts, structured-generation provider, three independent reviewers, fixed concurrent workflow, deterministic decision engine, main review API endpoint, manual-input review interface, frontend component tests, and three fictional deterministic evaluation cases are implemented. Live-model evaluation remains unfinished.
 
 ## Problem
 
@@ -16,16 +16,19 @@ Provide a small, local, human-in-the-loop workflow that evaluates a pasted draft
 
 ## Included features
 
-- Pasted-text inputs for campaign context, evidence, journalist context, recent coverage, and the draft pitch
-- Claim and evidence review
-- Journalist relevance and personalization review
-- Tone, language, confidentiality, and reputational risk review
+- **Implemented:** Pasted-text inputs for campaign context, evidence, journalist context, recent coverage, and the draft pitch
+- **Implemented:** Claim and evidence review
+- **Implemented:** Journalist relevance and personalization review
+- **Implemented:** Tone, language, confidentiality, and reputational risk review
 - **Implemented:** Pydantic validation models for planned API and reviewer data
 - **Implemented:** A fixed Python-controlled workflow that runs all three reviewers concurrently and returns complete or partial results
 - **Implemented:** Deterministic `BLOCK`, `REVISE`, and `PASS` rules for complete workflow results
 - **Implemented:** A validated `POST /api/v1/reviews` response containing an explainable complete report or safe partial results
 - **Implemented:** Safe API handling of incomplete, malformed, or timed-out model responses
-- Automated tests and a small fictional evaluation dataset
+- **Implemented:** Automated tests for backend contracts, workflow behavior, decision rules, and the review API
+- **Implemented:** Focused frontend component tests with mocked API requests
+- **Implemented:** Three fictional deterministic evaluation cases covering `PASS`, `REVISE`, and `BLOCK`
+- **Planned:** An optional live-model evaluation process and recorded results
 
 ## Explicit non-goals
 
@@ -40,7 +43,7 @@ The MVP will not include:
 - a production-complete user interface; or
 - fully autonomous outreach.
 
-## Planned inputs
+## Implemented inputs
 
 1. Campaign or company brief
 2. Supporting evidence or verified facts
@@ -50,7 +53,7 @@ The MVP will not include:
 
 All inputs must be treated as untrusted text and must not be allowed to override system instructions.
 
-## Planned outputs
+## Implemented outputs
 
 - Overall decision: `PASS`, `REVISE`, or `BLOCK`
 - Journalist relevance score
@@ -58,7 +61,7 @@ All inputs must be treated as untrusted text and must not be allowed to override
 - Supported, unsupported, contradicted, and unclear claims
 - Tone, language, confidentiality, and reputational warnings
 - Human-readable explanations and recommended actions
-- An optional evidence-bounded revised pitch that is clearly marked for human approval
+- **Optional stretch goal:** An evidence-bounded revised pitch that is clearly marked for human approval
 
 ## Human-in-the-loop requirement
 
@@ -68,12 +71,11 @@ PitchGuard is decision support, not an autonomous sender or a factual guarantee.
 
 If input validation fails, an AI provider times out, or an AI response is malformed, incomplete, or invalid, the review must remain incomplete. The system must expose the failure and must not silently return `PASS` or manufacture missing findings. Retries must be bounded.
 
+## Finalized MVP decisions
+
+Decision thresholds, request limits, English-only support, frontend testing, licensing, and retained workflow defaults are recorded in `docs/project-decisions.md`. The Revision Agent remains an optional stretch goal.
+
 ## Unresolved product decisions
 
-- `[TBD: evaluation evidence required before changing the implemented decision thresholds or precedence]`
-- `[TBD: maximum input and output sizes]`
-- `[TBD: supported languages for the MVP]`
-- `[TBD: whether evaluation results require changing the workflow defaults of two attempts, a 0.25-second retry delay, and a 130-second per-attempt timeout]`
-- `[TBD: evaluation metrics and acceptance thresholds]`
-- `[TBD: whether the Revision Agent is included in the MVP or retained as a stretch goal]`
-- `[TBD: how incomplete-review state is represented in the UI]`
+- `[TBD: live-Ollama evaluation metrics and acceptance thresholds]`
+- `[TBD: representative live-Ollama baseline results]`

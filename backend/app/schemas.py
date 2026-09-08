@@ -84,29 +84,29 @@ class ReviewerName(StrEnum):
 
 class CampaignBrief(PitchGuardSchema):
     company_name: str = Field(min_length=1, max_length=120)
-    announcement: str = Field(min_length=20, max_length=5_000)
-    target_audience: str = Field(min_length=1, max_length=1_000)
+    announcement: str = Field(min_length=20, max_length=2_000)
+    target_audience: str = Field(min_length=1, max_length=500)
 
 
 class EvidenceItem(PitchGuardSchema):
     id: EvidenceId
-    source: str = Field(min_length=1, max_length=200)
-    content: str = Field(min_length=10, max_length=5_000)
+    source: str = Field(min_length=1, max_length=300)
+    content: str = Field(min_length=10, max_length=3_000)
     confidential: bool = False
 
 
 class CoverageItem(PitchGuardSchema):
     id: CoverageId
     title: str = Field(min_length=1, max_length=300)
-    summary: str = Field(min_length=10, max_length=3_000)
+    summary: str = Field(min_length=10, max_length=1_000)
     publication_date: date | None = None
     url: HttpUrl | None = None
 
 
 class JournalistProfile(PitchGuardSchema):
     name: str = Field(min_length=1, max_length=120)
-    publication: str = Field(min_length=1, max_length=200)
-    beat: str = Field(min_length=1, max_length=1_000)
+    publication: str = Field(min_length=1, max_length=160)
+    beat: str = Field(min_length=1, max_length=500)
     recent_coverage: list[CoverageItem] = Field(default_factory=list, max_length=10)
 
 
@@ -114,7 +114,7 @@ class ReviewRequest(PitchGuardSchema):
     campaign: CampaignBrief
     evidence: list[EvidenceItem] = Field(default_factory=list, max_length=10)
     journalist: JournalistProfile
-    pitch: str = Field(min_length=20, max_length=5_000)
+    pitch: str = Field(min_length=50, max_length=6_000)
 
     @model_validator(mode="after")
     def validate_unique_item_ids(self) -> Self:
