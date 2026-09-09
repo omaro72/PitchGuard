@@ -942,6 +942,37 @@ The AI coding agent inspected the repository state and generated scaffold files.
 
 ---
 
+## 2026-09-09 — Repair the backend CI setup action
+
+### Goal
+
+Restore the GitHub Actions backend checks after the workflow failed while resolving the uv setup action.
+
+### Instructions given to the AI coding tool
+
+Explain the failure in beginner-friendly language and correct the invalid GitHub Actions reference.
+
+### Generated changes reviewed
+
+The backend workflow setup step and the official Astral uv GitHub Actions guidance were reviewed.
+
+### Problems or incorrect assumptions found
+
+- The workflow referenced `astral-sh/setup-uv@v10`, but GitHub could not resolve that major-version tag.
+
+### Corrections made
+
+- Pinned `astral-sh/setup-uv` to the official `v9.0.0` commit revision published in the uv documentation.
+
+### Verification performed
+
+- The workflow diff was reviewed.
+- The referenced commit revision was checked against the official uv GitHub Actions documentation.
+
+### Remaining limitations
+
+- The corrected workflow must be pushed before GitHub can execute and confirm it on a hosted runner.
+
 ## Date and task
 
 ### Goal
