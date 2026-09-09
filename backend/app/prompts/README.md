@@ -1,6 +1,6 @@
 # PitchGuard reviewer prompts
 
-This directory contains the versioned system prompts for PitchGuard's three focused AI reviewers. The prompts define reviewer behavior only. Independent reviewer execution is implemented in `app/reviewers`, the fixed concurrent workflow is implemented in `app/workflow`, and deterministic decisions are implemented separately in `app/decision`.
+This directory contains the versioned system prompts for PitchGuard's three focused AI reviewers. The prompts define reviewer behavior only. Independent reviewer execution is implemented in `app/reviewers`, the fixed sequential workflow is implemented in `app/workflow`, and deterministic decisions are implemented separately in `app/decision`.
 
 ## Active prompts
 
@@ -18,7 +18,7 @@ A prompt ID uses `<reviewer-name>-v<integer>`. Its file uses the same reviewer n
 
 Version 1 is the first testable behavior. After a version is used in a recorded evaluation, do not silently change its behavior. A meaningful change to responsibilities, safety rules, scoring, classification rubrics, or the output contract requires a new immutable integer version and a new file, such as `evidence_reviewer_v2.md`. A typographical correction that cannot affect behavior may remain in the existing version, but it must remain visible in Git history. Never replace an older version to hide an unsuccessful evaluation. Keep evaluated versions until an explicit cleanup decision is made.
 
-Evaluate a new or changed prompt before making it active. Structural tests catch missing contracts and schema mismatches, but live evaluation is needed later to assess model behavior across representative safe, unsafe, ambiguous, and adversarial inputs.
+Evaluate a new or changed prompt before making it active. Structural tests catch missing contracts and schema mismatches. A future prompt change intended for real use would also require representative live evaluation across safe, unsafe, ambiguous, and adversarial inputs; v0.1.0 does not claim that benchmark.
 
 ## Loading prompts
 

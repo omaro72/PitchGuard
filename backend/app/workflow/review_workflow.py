@@ -57,23 +57,12 @@ class ReviewWorkflow:
             ReviewerName.RELEVANCE: lambda: self._relevance_reviewer.review(request),
             ReviewerName.RISK: lambda: self._risk_reviewer.review(request),
         }
-        tasks = {
-            reviewer: asyncio.create_task(
-                self._run_reviewer(reviewer, reviewer_call),
-                name=f"pitchguard-reviewer-{reviewer.value.lower()}",
+        outcomes: dict[ReviewerName, ReviewerOutcome] = {}
+        for reviewer in self._reviewer_order:
+            outcomes[reviewer] = await self._run_reviewer(
+                reviewer,
+                reviewer_calls[reviewer],
             )
-            for reviewer, reviewer_call in reviewer_calls.items()
-        }
-
-        try:
-            await asyncio.gather(*tasks.values())
-        finally:
-            for task in tasks.values():
-                if not task.done():
-                    task.cancel()
-            await asyncio.gather(*tasks.values(), return_exceptions=True)
-
-        outcomes = {reviewer: task.result() for reviewer, task in tasks.items()}
         return self._build_result(outcomes)
 
     async def _run_reviewer(

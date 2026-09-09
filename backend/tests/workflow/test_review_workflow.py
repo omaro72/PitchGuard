@@ -170,7 +170,7 @@ def test_result_cannot_accept_claimed_completion(
         )
 
 
-def test_complete_success_is_concurrent_and_identity_safe(
+def test_complete_success_is_sequential_and_identity_safe(
     review_request: ReviewRequest,
     evidence_review: EvidenceReview,
     relevance_review: RelevanceReview,
@@ -187,20 +187,17 @@ def test_complete_success_is_concurrent_and_identity_safe(
         original_request = review_request.model_dump()
 
         workflow_task = asyncio.create_task(workflow.run(review_request))
-        await asyncio.wait_for(
-            asyncio.gather(
-                evidence.started.wait(),
-                relevance.started.wait(),
-                risk.started.wait(),
-            ),
-            timeout=1,
-        )
+        await asyncio.wait_for(evidence.started.wait(), timeout=1)
+        assert relevance.started.is_set() is False
+        assert risk.started.is_set() is False
 
-        risk_gate.set()
-        await asyncio.wait_for(risk.finished.wait(), timeout=1)
-        relevance_gate.set()
-        await asyncio.wait_for(relevance.finished.wait(), timeout=1)
         evidence_gate.set()
+        await asyncio.wait_for(relevance.started.wait(), timeout=1)
+        assert risk.started.is_set() is False
+
+        relevance_gate.set()
+        await asyncio.wait_for(risk.started.wait(), timeout=1)
+        risk_gate.set()
         result = await workflow_task
 
         assert result.evidence_review is evidence_review
@@ -277,43 +274,15 @@ def test_all_expected_failures_are_ordered_without_duplicates(
     review_request: ReviewRequest,
 ) -> None:
     async def scenario() -> None:
-        evidence_gate = asyncio.Event()
-        relevance_gate = asyncio.Event()
-        risk_gate = asyncio.Event()
-        evidence = FakeReviewer[EvidenceReview](
-            [ProviderModelNotFoundError()],
-            finish_gate=evidence_gate,
-        )
-        relevance = FakeReviewer[RelevanceReview](
-            [ProviderModelNotFoundError()],
-            finish_gate=relevance_gate,
-        )
-        risk = FakeReviewer[RiskReview](
-            [ProviderModelNotFoundError()],
-            finish_gate=risk_gate,
-        )
-        task = asyncio.create_task(
-            ReviewWorkflow(
-                evidence,
-                relevance,
-                risk,
-                ReviewWorkflowPolicy(max_attempts=1),
-            ).run(review_request)
-        )
-        await asyncio.wait_for(
-            asyncio.gather(
-                evidence.started.wait(),
-                relevance.started.wait(),
-                risk.started.wait(),
-            ),
-            timeout=1,
-        )
-        risk_gate.set()
-        await asyncio.wait_for(risk.finished.wait(), timeout=1)
-        relevance_gate.set()
-        await asyncio.wait_for(relevance.finished.wait(), timeout=1)
-        evidence_gate.set()
-        result = await task
+        evidence = FakeReviewer[EvidenceReview]([ProviderModelNotFoundError()])
+        relevance = FakeReviewer[RelevanceReview]([ProviderModelNotFoundError()])
+        risk = FakeReviewer[RiskReview]([ProviderModelNotFoundError()])
+        result = await ReviewWorkflow(
+            evidence,
+            relevance,
+            risk,
+            ReviewWorkflowPolicy(max_attempts=1),
+        ).run(review_request)
 
         assert result.evidence_review is None
         assert result.relevance_review is None
@@ -510,7 +479,7 @@ def test_hanging_attempts_time_out_and_preserve_other_results(
     asyncio.run(scenario())
 
 
-def test_unexpected_exception_is_reraised_and_other_tasks_are_cleaned_up(
+def test_unexpected_exception_is_reraised_before_later_reviewers_run(
     review_request: ReviewRequest,
     evidence_review: EvidenceReview,
     relevance_review: RelevanceReview,
@@ -518,37 +487,27 @@ def test_unexpected_exception_is_reraised_and_other_tasks_are_cleaned_up(
 ) -> None:
     async def scenario() -> None:
         evidence_gate = asyncio.Event()
-        relevance_gate = asyncio.Event()
-        risk_gate = asyncio.Event()
         evidence = FakeReviewer(
             [AttributeError("fictional programming defect")],
             finish_gate=evidence_gate,
         )
-        relevance = FakeReviewer([relevance_review], finish_gate=relevance_gate)
-        risk = FakeReviewer([risk_review], finish_gate=risk_gate)
+        relevance = FakeReviewer([relevance_review])
+        risk = FakeReviewer([risk_review])
         task = asyncio.create_task(ReviewWorkflow(evidence, relevance, risk).run(review_request))
-        await asyncio.wait_for(
-            asyncio.gather(
-                evidence.started.wait(),
-                relevance.started.wait(),
-                risk.started.wait(),
-            ),
-            timeout=1,
-        )
+        await asyncio.wait_for(evidence.started.wait(), timeout=1)
 
         evidence_gate.set()
         with pytest.raises(AttributeError, match="fictional programming defect"):
             await task
 
         assert evidence.call_count == 1
-        assert relevance.cancelled_count == 1
-        assert risk.cancelled_count == 1
-        assert no_pending_workflow_tasks()
+        assert relevance.call_count == 0
+        assert risk.call_count == 0
 
     asyncio.run(scenario())
 
 
-def test_workflow_cancellation_propagates_and_cleans_up_reviewers(
+def test_workflow_cancellation_stops_before_later_reviewers_run(
     review_request: ReviewRequest,
     evidence_review: EvidenceReview,
     relevance_review: RelevanceReview,
@@ -561,27 +520,14 @@ def test_workflow_cancellation_propagates_and_cleans_up_reviewers(
             FakeReviewer([risk_review], finish_gate=asyncio.Event()),
         )
         task = asyncio.create_task(ReviewWorkflow(*reviewers).run(review_request))
-        await asyncio.wait_for(
-            asyncio.gather(*(reviewer.started.wait() for reviewer in reviewers)),
-            timeout=1,
-        )
+        await asyncio.wait_for(reviewers[0].started.wait(), timeout=1)
 
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
 
-        assert all(reviewer.call_count == 1 for reviewer in reviewers)
-        assert all(reviewer.cancelled_count == 1 for reviewer in reviewers)
-        assert no_pending_workflow_tasks()
+        assert reviewers[0].call_count == 1
+        assert reviewers[0].cancelled_count == 1
+        assert all(reviewer.call_count == 0 for reviewer in reviewers[1:])
 
     asyncio.run(scenario())
-
-
-def no_pending_workflow_tasks() -> bool:
-    current_task = asyncio.current_task()
-    return not any(
-        task is not current_task
-        and not task.done()
-        and task.get_name().startswith("pitchguard-reviewer-")
-        for task in asyncio.all_tasks()
-    )

@@ -5,11 +5,13 @@ These rules apply to every AI coding agent working in this repository. Follow th
 ## Project scope
 
 - PitchGuard reviews PR pitches before they are sent.
+- The local MVP defined in `docs/prd.md` is complete; default to maintenance, corrections, tests, and documentation rather than expanding its scope.
 - The MVP accepts pasted text for campaign briefs, evidence, journalist profiles, recent coverage, and draft pitches.
 - The MVP has no database, PDF upload, authentication, or deployment.
+- Docker Compose is local packaging, not a cloud deployment.
 - The MVP does not send email, SMS, or WhatsApp messages.
 - The MVP uses local Ollama inference.
-- The Ollama model is configurable; the initial default is `qwen3:8b`.
+- The Ollama model is configurable; the current default is `qwen3:4b`.
 - Do not describe planned product behavior as implemented.
 
 ## Architecture rules

@@ -1,244 +1,249 @@
 # PitchGuard
 
-PitchGuard is an AI-assisted quality gate that reviews PR pitches before they are sent to journalists, detecting poor targeting, unsupported claims, weak personalization, inappropriate language, and potential reputational risks.
+PitchGuard is an AI-assisted quality gate that reviews PR pitches before they are sent to journalists. It checks whether claims match supplied evidence, whether the journalist is a suitable target, and whether the pitch creates language, confidentiality, or reputational risks.
 
-> **Current status:** The local development scaffold, validated data and configuration models, versioned prompts, provider-independent Ollama integration, three independent pitch reviewers, fixed concurrent workflow, deterministic decision rules, main review API endpoint, manual-input review interface, and three fictional deterministic evaluation cases are **Implemented**. Live-model evaluation and the optional Revision Agent remain unfinished. Unless explicitly marked **Implemented**, the capabilities described below are intended behavior rather than completed functionality.
+> **Current status:** **Implemented — MVP v0.1.0.** The complete local workflow, responsive frontend, FastAPI API, three AI reviewers, deterministic decision engine, failure handling, automated tests, fictional evaluation fixtures, and Docker Compose startup are present. PitchGuard is local-only and is not deployed.
 
 ## Overview
 
-PitchGuard is intended to help public relations professionals inspect a draft pitch before sending it. It will compare the pitch with user-supplied campaign evidence and journalist information, run several focused AI reviews, validate their structured responses, and use deterministic application rules to produce a `PASS`, `REVISE`, or `BLOCK` recommendation.
+PitchGuard helps a PR professional review a draft before deciding whether to send it. The application accepts manually pasted campaign information, runs three focused reviewers through local Ollama, validates every reviewer response, and then uses Python rules to return `PASS`, `REVISE`, or `BLOCK`.
 
-PitchGuard is a decision-support system. It will not send messages automatically, and its output will not guarantee that a pitch is correct, safe, or suitable. A human remains responsible for reviewing the findings and deciding whether to use the pitch.
+PitchGuard is a decision-support system. It does not contact journalists, independently prove facts, or guarantee that a pitch is safe or correct. A human remains responsible for the final decision.
 
 ## Problem
 
-AI can make PR drafting faster, but fluent text can still contain serious problems:
+AI-assisted drafts can sound credible while still containing:
 
 - unsupported, exaggerated, or contradicted claims;
 - incorrect statistics, rankings, or comparisons;
-- weak journalist targeting or generic personalization;
+- poor journalist targeting or generic personalization;
 - overly promotional, manipulative, or spam-like language;
-- unclear calls to action;
-- confidential, sensitive, defamatory, or reputationally risky content; and
-- statements that appear credible but are not supported by the evidence supplied for the campaign.
+- unclear calls to action; or
+- confidential, sensitive, or reputationally dangerous information.
 
-Sending a poor pitch can damage the relationship between a PR professional and a journalist and can harm the reputation of the agency or client.
+Sending such a pitch can damage trust with a journalist and harm an agency or client.
 
 ## Solution
 
-The proposed workflow accepts five inputs:
+The implemented review accepts:
 
-1. A campaign or company brief
-2. Supporting evidence or verified facts
-3. A journalist profile
-4. Examples of the journalist's recent coverage
-5. The proposed PR pitch
+1. A company name, announcement, and target audience
+2. Zero or more supporting evidence items
+3. A journalist name, publication, and coverage focus
+4. Zero or more recent-coverage examples
+5. A draft PR pitch
 
-Specialized AI agents will examine different risk areas. Their outputs will use defined JSON schemas and will be validated before the application relies on them. Normal application code—not an LLM acting alone—will combine the validated findings and apply the final decision rules.
+Each AI reviewer returns structured JSON matching a Pydantic schema. The application also checks semantic rules, such as whether a referenced evidence ID exists and whether a quoted finding appears in the supplied pitch. Only a complete set of valid reviewer results can reach the deterministic decision engine.
 
-The intended report includes:
+The report contains:
 
-- an overall `PASS`, `REVISE`, or `BLOCK` decision;
+- a final `PASS`, `REVISE`, or `BLOCK` recommendation for complete reviews;
 - journalist relevance and personalization scores;
-- supported, unsupported, contradicted, and unclear claims;
-- tone, language, confidentiality, and reputational warnings;
-- a human-readable reason for each important finding;
-- recommended actions; and
-- optionally, a revised pitch limited to verified information.
+- supported, unsupported, contradicted, and unclear claim findings;
+- tone, language, confidentiality, and reputational risk findings;
+- human-readable explanations and recommended actions; and
+- safe reviewer errors with any successful partial results when the analysis is incomplete.
 
 ## Demo and screenshots
 
-**Implemented** — The local frontend provides the manual review form and renders complete or partial API reports. No repository screenshot or deployed demo is available yet.
+**Implemented — local demo.** The responsive frontend contains the complete manual-input workflow and report view. No screenshot or hosted demo is included because deployment is outside this MVP.
 
-Deployment status: not deployed; deployment is outside the MVP scaffold scope.
+The fastest way to see the application is the Docker Compose option in [Getting started](#getting-started).
 
 ## How it works
 
-The proposed MVP user flow is:
-
-1. The user opens the application.
-2. The user enters a campaign brief and supporting facts.
-3. The user enters a journalist profile and examples of recent coverage.
+1. The user opens the frontend.
+2. The user enters campaign details and optional evidence.
+3. The user enters the journalist profile and optional recent coverage.
 4. The user pastes the draft pitch.
-5. The user starts the review.
-6. The application shows the progress or status of each agent.
-7. The application displays the final decision.
-8. The user expands each section to inspect evidence, relevance, and risk findings.
-9. If available, the user requests a revised pitch.
-10. The user manually decides whether to use the result.
+5. The user selects **Review pitch**.
+6. The application displays a review-in-progress state while the reviewers run sequentially.
+7. A complete analysis displays the deterministic decision and all findings.
+8. An incomplete analysis displays no decision, explains the reviewer failures, and preserves successful partial results.
+9. The user can edit the form and submit it again.
+10. The user manually decides whether to use the pitch.
 
 ## Agent responsibilities
 
-The first three reviewers are **Implemented** as independent backend components. Each sends only its required input through the provider interface, returns a validated Pydantic model, and applies deterministic semantic checks. Their fixed concurrent workflow, deterministic decision engine, and API integration are also **Implemented**.
-
 ### 1. Claim and Evidence Agent — **Implemented**
 
-This reviewer:
+This reviewer extracts factual and measurable statements, including statistics, comparisons, performance claims, and market-leadership claims. It compares each statement only with the supplied evidence and classifies it as:
 
-- extract factual and measurable claims from the pitch;
-- identify statistics, rankings, comparisons, performance claims, and market-leadership claims;
-- compare each claim with the supplied campaign brief and evidence;
-- classify each claim as `SUPPORTED`, `UNSUPPORTED`, `CONTRADICTED`, or `UNCLEAR`;
-- explain the classification; and
-- reference the supplied evidence when it is available.
+- `SUPPORTED`
+- `UNSUPPORTED`
+- `CONTRADICTED`
+- `UNCLEAR`
 
-The agent must never use general model knowledge as proof that a campaign claim is correct.
+It explains every classification and references supplied evidence IDs when appropriate. General model knowledge is never accepted as proof of a campaign claim.
 
-For example, if a pitch says, “Our customers save 40% of their working time,” while the supplied evidence reports a 22% reduction in time spent on administrative tasks, the agent should identify changes in both the percentage and scope. It should classify the claim as `CONTRADICTED` and explain why the change is materially misleading rather than treating the statements as equivalent.
+For example, if the pitch claims a 40% saving across all working time while the supplied study reports a 22% reduction for administrative tasks, the reviewer should identify the changed percentage and scope rather than treat the claims as equivalent.
 
 ### 2. Journalist Relevance Agent — **Implemented**
 
-This reviewer:
+This reviewer compares the campaign with the journalist's supplied coverage focus and recent work. It returns:
 
-- compare the campaign subject with the journalist's stated beat;
-- examine the supplied examples of recent coverage;
-- determine whether the journalist appears to be an appropriate target;
-- check whether the pitch meaningfully references the journalist's work;
-- detect generic or superficial personalization; and
-- return a relevance score from 0 to 100, a personalization score from 0 to 100, a short explanation, and specific mismatch warnings.
+- a relevance score from 0 to 100;
+- a personalization score from 0 to 100;
+- matched topics;
+- specific mismatches;
+- missing context; and
+- a short explanation.
 
-It must not assume facts about the journalist that the user did not supply.
+It cannot assume facts about the journalist that the user did not provide.
 
 ### 3. PR Risk Agent — **Implemented**
 
-This reviewer:
+This reviewer looks for excessive promotion, unsupported superlatives, misleading certainty, spam-like pressure, unclear calls to action, confidentiality problems, and reputational risks. Each finding has a category, a `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` severity, an explanation, and a recommended action.
 
-- detect exaggerated and overly promotional language;
-- identify unsupported superlatives such as “best,” “first,” “fastest-growing,” and “revolutionary”;
-- detect misleading certainty or unrealistic promises;
-- identify aggressive, manipulative, or spam-like language;
-- check for a clear and reasonable call to action; and
-- flag potentially confidential, sensitive, defamatory, or reputationally dangerous content.
-
-Each finding will be classified as `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`. The agent provides analysis but does not choose the final decision.
+This reviewer reports risks but never selects the final decision.
 
 ### 4. Revision Agent — **Optional stretch goal**
 
-If implemented, this agent will:
-
-- rewrite the pitch using findings from the other agents;
-- use only facts supported by the campaign brief and supplied evidence;
-- remove or qualify unsupported statements;
-- improve relevance and personalization without inventing details;
-- preserve the main intention of the original pitch;
-- avoid adding new names, numbers, claims, quotations, or facts; and
-- label its output as requiring human approval.
+No automatic pitch rewriting is implemented. A future revision component would need to use only supplied, supported facts and require human approval. It is not part of the completed MVP.
 
 ## System architecture
 
-The internal reviewer workflow is **Implemented**. It coordinates the three fixed reviewers concurrently, applies bounded per-attempt timeouts and retries, preserves partial successes, and returns structured errors. The deterministic decision engine is also **Implemented** and refuses incomplete workflows. The API assembles validated complete or partial reports, and the frontend renders both states without inventing a decision.
+The frontend and backend remain separate. The browser calls FastAPI, and only the Python backend communicates with Ollama. Each reviewer uses the same provider interface but has its own versioned prompt, request context, response schema, and semantic validation.
+
+Reviewers run in the fixed order Claim and Evidence, Journalist Relevance, then PR Risk. Sequential execution reduces local-model contention on CPU-only machines. Expected operational failures do not stop later reviewers, so the API can preserve successful partial results.
 
 ```mermaid
 flowchart TD
-    U[Human user] --> I[Campaign evidence, journalist context, and draft pitch]
-    I --> V[Input validation]
-    V --> O[Fixed reviewer workflow]
-    O --> C[Claim and Evidence Agent]
-    O --> J[Journalist Relevance Agent]
-    O --> R[PR Risk Agent]
-    C --> S[Schema validation]
-    J --> S
-    R --> S
-    S --> D[Deterministic decision rules]
-    D --> F[Explainable review report]
-    F -. optional human request .-> X[Revision Agent]
-    X --> H[Human review and approval]
-    F --> H
+    U[Human user] --> F[Next.js form]
+    F --> A[FastAPI input validation]
+    A --> W[Python-controlled workflow]
+    W --> E[Claim and Evidence review]
+    E --> J[Journalist Relevance review]
+    J --> R[PR Risk review]
+    R --> V{All three outputs valid?}
+    V -- Yes --> D[Deterministic Python decision engine]
+    D --> C[Complete report: PASS, REVISE, or BLOCK]
+    V -- No --> P[Partial error report: no decision]
+    C --> H[Human review]
+    P --> H
 ```
-
-The intended orchestration sequence is:
-
-1. Validate the user's input.
-2. Run the appropriate agents.
-3. Validate every response against a defined schema.
-4. Treat malformed, incomplete, or timed-out responses as review failures—not as evidence that a pitch is safe.
-5. Combine the validated findings.
-6. Apply deterministic decision rules in application code.
-7. Generate an explainable final report.
 
 ## Decision and guardrail logic
 
-**Implemented** — The final decision is calculated by synchronous Python code. No AI agent selects or overrides it.
+**Implemented.** The AI reviewers identify and explain findings. Synchronous Python code owns the final decision, using the precedence `BLOCK > REVISE > PASS`.
 
-The initial proposed rules, in precedence order, are:
+`BLOCK` is returned when at least one of these conditions exists:
 
-- `BLOCK` when a high-risk factual claim is contradicted.
-- `BLOCK` when a critical reputational or confidentiality risk is detected.
-- `BLOCK` when journalist relevance is below 40.
-- `REVISE` when an important claim is unsupported.
-- `REVISE` when relevance is from 40 through 69.
-- `REVISE` when personalization is below 60.
-- `REVISE` when a medium-severity tone or language issue is detected.
-- `PASS` only when no blocking or revision condition exists and all configured quality thresholds are satisfied.
+- a high-importance claim contradicts supplied evidence;
+- a critical PR or reputational risk is present;
+- a high or critical confidentiality risk is present; or
+- journalist relevance is below 40.
 
-The implemented default thresholds are 40 for blocking relevance, 70 for acceptable relevance, and 60 for acceptable personalization. They are held in an injectable application policy rather than embedded in prompts.
+`REVISE` is returned when there is no blocking condition and at least one of these conditions exists:
 
-The design is guided by six guardrails:
+- a low- or medium-importance claim contradicts supplied evidence;
+- a medium- or high-importance claim is unsupported or unclear;
+- relevance is from 40 through 69;
+- personalization is below 60;
+- an actionable medium- or high-severity risk is present; or
+- a reviewer reports missing context.
 
-- **Human-in-the-loop:** PitchGuard advises; a person makes the final sending decision.
-- **Structured AI output:** Every agent response must be JSON validated against an explicit schema before use.
-- **Deterministic guardrails:** LLMs identify and explain possible issues; application code determines the outcome.
-- **Evidence-bounded generation:** Supplied evidence must remain distinguishable from unverified text, and revisions must not introduce absent facts.
-- **Fail safely:** Invalid JSON, missing fields, timeouts, and incomplete reviews must never silently produce `PASS`.
-- **Explainability:** Important warnings and decisions must include reasons a reviewer can inspect.
+`PASS` is returned only when the workflow is complete and no blocking or revision condition exists. The thresholds live in the backend `DecisionPolicy` and have boundary tests for 39/40, 69/70, and 59/60.
+
+The main guardrails are:
+
+- **Human-in-the-loop:** the application advises; a person decides whether to send.
+- **Structured output:** every model response is validated against a Pydantic schema.
+- **Semantic validation:** structurally valid but inconsistent reviewer results are rejected.
+- **Deterministic decisions:** no AI reviewer can select or override the final outcome.
+- **Evidence-bounded analysis:** supplied evidence is distinct from unverified pitch content.
+- **Fail-safe behavior:** invalid, missing, or timed-out analysis cannot produce a completed decision.
+- **Explainability:** every important finding and decision reason is visible to the user.
 
 ## Technology stack
 
-| Area | Current choice | Status |
+| Area | Current technology | Status |
 | --- | --- | --- |
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | **Implemented** manual-input form and report |
-| Backend | Python 3.14, FastAPI, Pydantic, Pydantic Settings | **Implemented** scaffold |
-| Local server | Uvicorn | **Implemented** for local API serving |
-| AI provider | Official Ollama client behind a structured-generation interface | **Implemented** provider and independent reviewer layers |
-| Backend tests | `pytest`, HTTPX, and HTTPX2 | **Implemented** for health, configuration, schemas, prompts, providers, reviewers, workflow, decision rules, and the review API |
-| Frontend tests | Vitest, React Testing Library, and `user-event` | **Implemented** focused component tests |
-| Code quality | Ruff, ESLint, and TypeScript validation | **Implemented** |
-| Git hooks | Pre-commit hooks | **Optional stretch goal** |
-| CI | GitHub Actions for linting, tests, type checking, and build verification | **Implemented** configuration |
-| Packaging | Docker | **Planned** |
-| Deployment | None for the MVP | **Implemented** scope decision |
-| Infrastructure as code | Terraform | **Optional stretch goal** |
-| Storage | No database or persistent analysis storage for the MVP | **Implemented** scope decision |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | **Implemented** |
+| Backend | Python 3.14, FastAPI, Pydantic, Pydantic Settings | **Implemented** |
+| Local AI | Ollama with configurable model, default `qwen3:4b` | **Implemented** |
+| Backend tests | pytest and HTTP test clients | **Implemented** |
+| Frontend tests | Vitest, React Testing Library, `user-event` | **Implemented** |
+| Quality checks | Ruff, ESLint, TypeScript | **Implemented** |
+| CI | GitHub Actions | **Implemented** |
+| Packaging | Docker Compose and separate application images | **Implemented** |
+| Storage | No permanent analysis storage | **Implemented scope decision** |
+| Deployment | No cloud deployment | **MVP non-goal** |
 
-The manifests deliberately keep the scaffold small. Uvicorn serves the ASGI application; HTTPX and HTTPX2 support provider and API tests; Pydantic Settings validates configuration; and the official Ollama client supports structured local generation. Exact resolved versions are recorded in `backend/uv.lock` and `frontend/package-lock.json`.
-
-The selected Ollama model and endpoint are configured through environment variables. The MVP does not require a cloud AI API key, and no real secret or API key should ever be committed to this repository.
+Resolved dependency versions are recorded in `backend/uv.lock` and `frontend/package-lock.json`.
 
 ## Current implementation status
 
-| Capability | Status | Repository evidence |
+| Capability | Status | Location |
 | --- | --- | --- |
-| Project concept, provisional PRD, and development rules | **Implemented** | `README.md`, `docs/`, and `AGENTS.md` |
-| Minimal under-development page | **Implemented** | `frontend/src/app/page.tsx` |
-| Manual product inputs and report UI | **Implemented** | `frontend/src/components/` |
-| Fictional manual test scenarios | **Implemented** | `manual-test-scenarios/` |
-| API health endpoint and typed response | **Implemented** | `GET /api/health` in `backend/app/main.py` |
-| Main product review API | **Implemented** | `POST /api/v1/reviews` in `backend/app/api/routes/reviews.py` |
-| Claim and Evidence Agent | **Implemented** | `backend/app/reviewers/evidence.py` |
-| Journalist Relevance Agent | **Implemented** | `backend/app/reviewers/relevance.py` |
-| PR Risk Agent | **Implemented** | `backend/app/reviewers/risk.py` |
-| Fixed concurrent reviewer workflow | **Implemented** | `backend/app/workflow/` |
-| Review input, reviewer-output, error, and final-response schemas | **Implemented** | `backend/app/schemas.py` |
-| Structured-generation provider and Ollama implementation | **Implemented** | `backend/app/providers/` |
+| Review form and complete/partial report UI | **Implemented** | `frontend/src/` |
+| Health endpoint | **Implemented** | `GET /api/health` |
+| Main review endpoint | **Implemented** | `POST /api/v1/reviews` |
+| Three specialized reviewers | **Implemented** | `backend/app/reviewers/` |
+| Versioned prompts | **Implemented** | `backend/app/prompts/templates/` |
+| Ollama provider boundary | **Implemented** | `backend/app/providers/` |
+| Sequential workflow and safe failures | **Implemented** | `backend/app/workflow/` |
 | Deterministic decision engine | **Implemented** | `backend/app/decision/` |
-| Validated final report API response | **Implemented** | Complete results return `200`; safe partial results return `503` |
-| Health endpoint test | **Implemented** | `backend/tests/test_health.py` |
-| Schema validation tests | **Implemented** | `backend/tests/test_schemas.py` |
-| Decision tests | **Implemented** | `backend/tests/decision/` |
-| Fictional deterministic evaluation cases | **Implemented** | `backend/tests/fixtures/evaluation/` and `backend/tests/evaluation/` |
-| Live Ollama evaluation | **Planned** | No recorded live-model results are present |
-| Revision Agent | **Optional stretch goal** | No agent implementation is present |
-| Continuous integration | **Implemented** configuration | `.github/workflows/ci.yml` |
-| Deployment | **Planned** | No deployment configuration is present |
+| Automated backend and frontend tests | **Implemented** | `backend/tests/`, `frontend/src/**/*.test.tsx` |
+| Deterministic evaluation fixtures | **Implemented** | `backend/tests/fixtures/evaluation/` |
+| Fictional manual scenarios | **Implemented** | `manual-test-scenarios/` |
+| Docker Compose startup | **Implemented** | `compose.yaml` |
+| Live-model quality baseline | **Not included in MVP** | No benchmark result is claimed |
+| Revision Agent | **Optional stretch goal** | Not implemented |
 
 ## Getting started
 
-### Prerequisites
+### Fastest option: Docker Compose
+
+This option does not require a separate Python, Node.js, or Ollama installation.
+
+Prerequisites:
+
+- Docker Desktop on Windows or macOS, or Docker Engine with Docker Compose on Linux
+- Docker Desktop or Docker Engine started and ready before running the command
+- Internet access on the first run for container and model downloads
+- Enough free memory and disk space to run a local language model
+
+From the repository root, the directory containing `compose.yaml`, run:
+
+```bash
+docker compose up --build
+```
+
+The first start takes longer because Docker downloads the images and Ollama downloads `qwen3:4b`. The model is then reused from the `ollama-data` Docker volume. Wait for the services to become healthy, then open `http://localhost:3000`.
+
+Useful commands:
+
+```bash
+docker compose ps
+docker compose logs -f ollama-model backend
+docker compose down
+```
+
+If port 3000 or 8000 is already in use, select different host ports before starting.
+
+PowerShell:
+
+```powershell
+$env:FRONTEND_PORT=3100
+$env:BACKEND_PORT=8100
+docker compose up --build
+```
+
+Bash, zsh, or Git Bash:
+
+```bash
+FRONTEND_PORT=3100 BACKEND_PORT=8100 docker compose up --build
+```
+
+Then open `http://localhost:3100`. The portable default uses CPU-compatible Ollama execution; GPU-specific configuration is not required.
+
+### Native development prerequisites
 
 - Python 3.14
 - [uv](https://docs.astral.sh/uv/) for Python dependency management
 - Node.js 24 and npm
-- Ollama is not required for normal development checks or unit tests. It is required only for the skipped-by-default local integration test and live reviewer execution.
+- Ollama only when running live reviews or the optional integration test
 
 Install the locked dependencies from the repository root:
 
@@ -252,14 +257,14 @@ npm ci
 
 ## Environment variables
 
-The repository contains safe example files only. Copy them to local `.env` files when configuration is needed; never commit the resulting files.
+The repository contains example files only. Local `.env` files are ignored by Git and must never contain committed secrets.
 
 `backend/.env.example`:
 
 ```env
 APP_ENV=development
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen3:8b
+OLLAMA_MODEL=qwen3:4b
 OLLAMA_TIMEOUT_SECONDS=120
 CORS_ORIGINS=["http://localhost:3000"]
 ```
@@ -270,48 +275,49 @@ CORS_ORIGINS=["http://localhost:3000"]
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
-The backend and frontend load and validate these values. A local `.env` file is optional because the current settings have safe development defaults.
+The backend validates its settings during startup. The defaults support native local development; Docker Compose supplies the internal container addresses automatically.
 
-### Local Ollama setup
+### Native Ollama setup
 
-Install the default model before running a review:
-
-```bash
-ollama pull qwen3:8b
-ollama list
-```
-
-On CPU-only hardware, three concurrent `qwen3:8b` reviews may exceed the current timeout. A smaller local model can be used for development:
+Install and start Ollama, then download the default model:
 
 ```bash
 ollama pull qwen3:4b
+ollama list
 ```
 
-Copy `backend/.env.example` to `backend/.env`, change `OLLAMA_MODEL` to `qwen3:4b`, and restart the backend. The smaller model is expected to run faster, but its PitchGuard quality has not yet been evaluated.
+The original `qwen3:8b` model exceeded the configured timeout when three reviews competed for CPU on the tested machine. The smaller `qwen3:4b` model and sequential workflow provide a more portable local demonstration. This is an operational choice, not a claim that the smaller model has better review quality.
 
-## Running the application
+## Running the application natively
 
-Start the API from one terminal:
+Start the backend in one terminal:
 
 ```bash
 cd backend
 uv run uvicorn app.main:app --reload
 ```
 
-The health endpoint will be available at `http://localhost:8000/api/health`.
+After the API starts, `http://localhost:8000/api/health` should return:
 
-Start the frontend from a second terminal:
+```json
+{
+  "status": "ok",
+  "service": "pitchguard-api"
+}
+```
+
+Start the frontend in a second terminal:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-The minimal under-development page will be available at `http://localhost:3000`.
+Open `http://localhost:3000`.
 
 ## Running tests and checks
 
-Run the backend checks:
+Backend:
 
 ```bash
 cd backend
@@ -320,7 +326,7 @@ uv run ruff format --check .
 uv run pytest
 ```
 
-Run the frontend checks:
+Frontend:
 
 ```bash
 cd frontend
@@ -330,174 +336,149 @@ npm run typecheck
 npm run build
 ```
 
-The GitHub Actions workflow runs the same checks for pushes to `main` and pull requests.
+Container configuration and builds:
+
+```bash
+docker compose config --quiet
+docker compose build backend frontend
+```
+
+GitHub Actions runs these backend, frontend, and container checks for pushes to `main` and pull requests.
 
 ## Evaluation approach
 
-The project will need to test both deterministic application behavior and the less predictable behavior of AI models.
+### Deterministic evaluation — **Implemented**
 
-### Deterministic tests — **Implemented** for the current workflow
-
-The current automated suite covers schema boundaries, structured provider behavior, the three reviewers, workflow failures and retries, deterministic decision rules, API response mapping, application lifecycle, and three fictional end-to-end evaluation cases without requiring a live model. The evaluation cases validate `PASS`, `REVISE`, and `BLOCK` paths through the real reviewers, workflow, and decision engine while returning fixture responses through fake providers. The Revision Agent safety check remains unavailable because that optional agent is not implemented.
-
-The critical rule suite should verify that:
-
-- a contradicted high-risk claim results in `BLOCK`;
-- a relevance score below the configured threshold results in `BLOCK`;
-- an unsupported important claim results in `REVISE`;
-- a safe, relevant, well-supported pitch can result in `PASS`;
-- invalid agent JSON is rejected;
-- missing required fields are handled safely;
-- an AI provider timeout does not result in `PASS`; and
-- the Revision Agent cannot silently introduce unsupported claims.
-
-Run only the deterministic evaluation cases with:
+Three fictional JSON cases validate the complete `PASS`, `REVISE`, and `BLOCK` paths. Mocked provider outputs still pass through the real reviewers, semantic validation, sequential workflow, and decision engine. Normal tests do not require Ollama or network access.
 
 ```bash
 cd backend
 uv run pytest tests/evaluation
 ```
 
-### Fictional evaluation fixtures — **Implemented**
+The wider test suite covers:
 
-The current versioned dataset contains three concise cases:
+- contradicted claims, unsupported claims, and decision boundaries;
+- relevance and personalization thresholds;
+- valid complete results and successful `PASS` behavior;
+- malformed, empty, schema-invalid, and semantically invalid AI responses;
+- connection failures, timeouts, server errors, and missing models;
+- bounded retry behavior;
+- partial-result preservation and safe `503` responses; and
+- frontend payload, validation, complete report, and partial-error behavior.
 
-- a relevant, well-supported pitch expected to `PASS`;
-- a partially relevant pitch with an unsupported claim and actionable language risk expected to require `REVISE`; and
-- a pitch with a contradicted high-importance claim and confidential information expected to `BLOCK`.
+Eight additional fictional examples in `manual-test-scenarios/` can be pasted into the UI to explore supported claims, weak personalization, contradiction, poor targeting, confidentiality, spam-like language, and prompt injection.
 
-Each JSON fixture contains a validated request, mocked outputs for all three reviewers, the expected deterministic decision and reason codes, and stable score or category expectations. All names, organizations, claims, and URLs are fictional.
+### Live-model evaluation — **Not included in MVP**
 
-Future evaluation coverage may add:
-
-- a pitch sent to the wrong journalist;
-- a pitch with an invented statistic;
-- a pitch that exaggerates supplied evidence;
-- a generic mass-outreach message;
-- a prompt-injection attempt embedded in user-provided text; and
-- additional combinations of claim, targeting, and language failures.
-
-### Live Ollama evaluation — **Planned**
-
-Live-model evaluation remains optional and excluded from normal tests and CI. No live evaluation runner or recorded result is included yet.
-
-`[TBD: live-Ollama evaluation metrics and acceptance thresholds]`
+The repository does not claim a representative quality score or acceptance threshold for `qwen3:4b`. A skipped-by-default integration test verifies only the basic structured Ollama connection when explicitly enabled. Any future model evaluation should record the model, prompt versions, test cases, metrics, and acceptance criteria.
 
 ## Example analysis
 
-> **Illustrative example only:** This is not a recorded production or live-model result.
+> **Illustrative example only:** this is not a production result or recorded live-model benchmark.
 
 - **Decision:** `REVISE`
 - **Journalist relevance:** 82/100
 - **Personalization:** 45/100
 - **Claims:** 2 supported, 1 unsupported
 - **Highest risk:** Unsupported market-leadership claim
-- **Recommended action:** Remove the unsupported claim and reference a specific recent article supplied in the journalist context.
+- **Recommended action:** Remove the unsupported claim and reference a supplied recent article by the journalist.
 
 ## Security and privacy considerations
 
-Campaign briefs, unreleased announcements, contact details, journalist profiles, and draft pitches may contain sensitive information. The planned implementation should:
+- All campaign, evidence, journalist, coverage, and pitch fields are treated as untrusted input.
+- Reviewer prompts tell the model not to follow instructions embedded in user-provided content.
+- Reviewer outputs are schema-validated and semantically checked before use.
+- Safe client errors exclude prompts, raw model output, pitch content, evidence content, environment values, internal response bodies, and stack traces.
+- The application does not intentionally log full submitted content.
+- Analyses are processed without permanent application storage.
+- The default Ollama endpoint is local. If an operator changes `OLLAMA_BASE_URL` to a remote endpoint, the submitted review context will be sent to that endpoint.
+- Real client data, personal information, credentials, and API keys must never be committed.
 
-- never commit credentials or real API keys;
-- avoid logging full pitch contents or evidence unless strictly necessary;
-- redact sensitive values from errors and diagnostics;
-- minimize stored data and document any retention policy;
-- treat all user-provided text as untrusted, including text that attempts to override agent instructions;
-- separate source evidence from instructions to reduce prompt-injection risk;
-- apply least-privilege access to providers and storage; and
-- make clear what data is sent to an external AI provider.
-
-PitchGuard will not be a substitute for legal review, source verification, editorial judgment, or organizational security controls.
+These controls reduce risk but do not replace legal review, source verification, editorial judgment, or organizational security policy.
 
 ## Known limitations
 
-- **No live-model quality baseline yet:** The interface and deterministic safeguards are implemented, but representative Ollama evaluation results are not available.
-- LLM findings can be incomplete, inconsistent, or incorrect even when their format is valid.
-- PitchGuard can evaluate only the evidence and journalist context supplied to it; it cannot guarantee real-world truth.
-- Relevance and tone are contextual judgments and require human review.
-- Structured output and deterministic rules reduce risk but do not eliminate it.
-- The system is not intended to discover or verify facts from general model knowledge.
-- The MVP is supported and evaluated in English only. Other languages are accepted as Unicode text but are untested and unsupported; the application does not detect or translate languages.
-- Request limits include at most 10 evidence items, 10 recent-coverage items, and a pitch from 50 to 6,000 characters. The complete field and reviewer-output limits are documented in `docs/project-decisions.md`.
+- LLM findings can be incomplete, inconsistent, or incorrect even when their JSON is valid.
+- A `SUPPORTED` claim means it matches supplied evidence; it is not independently proven true.
+- Relevance and tone remain contextual judgments requiring human review.
+- The MVP is supported and evaluated in English only. Other Unicode text is accepted but untested; there is no language detection or translation.
+- A request accepts at most 10 evidence items, 10 recent-coverage items, and a pitch from 50 to 6,000 characters. Other limits are recorded in `docs/project-decisions.md`.
+- CPU-only live reviews can take several minutes and depend on the host's available memory and processing speed.
+- No representative live-model quality baseline is included.
+- There is no cloud deployment or permanent analysis history.
 
 ## Project scope and non-goals
 
-### MVP scope — **In progress**
+### MVP scope — **Implemented**
 
-- Manual campaign brief and supporting-facts input
-- Manual journalist profile and recent-coverage input
-- Draft pitch input
-- Specialized AI reviews
-- Schema validation
+- Manual pasted-text inputs
+- Three specialized AI reviews
+- Structured and semantic output validation
+- Fixed sequential orchestration
 - Deterministic decision logic
-- A clear, explainable final report
-- Sample demonstration scenarios
-- Automated tests for critical rules
-- Safe error handling for AI failures
+- Complete and partial-error reports
+- Fictional demonstration scenarios
+- Automated tests for critical rules and failures
+- Local native and Docker Compose startup
 
-### Non-goals for the first version
+### Non-goals for this version
 
-- Email delivery, WhatsApp, or SMS integration
-- Journalist database access
-- Automatic web scraping
-- User authentication or billing
-- A complex CRM
+- Automatic pitch rewriting
+- Email, WhatsApp, or SMS delivery
+- Journalist databases or web scraping
+- Authentication, billing, or CRM features
+- PDF or other file upload
+- Long-term campaign storage
+- Translation or language detection
+- Cloud deployment
 - Fully autonomous outreach
-- Long-term campaign management
 
 ## Roadmap
 
-1. **Implemented** — Create separate FastAPI and Next.js scaffolds, health checks, local tooling, repository guidance, and CI configuration.
-2. **In progress** — Refine the product requirements, data contracts, decision precedence, and acceptance criteria.
-3. **Implemented** — Define Pydantic models for product inputs, agent outputs, and reports.
-4. **Implemented** — Add the provider-independent structured-generation interface and local Ollama implementation.
-5. **Implemented** — Implement the three core reviewers through the provider interface, with fake-provider tests.
-6. **Implemented** — Coordinate the reviewers with a fixed concurrent workflow, bounded retries, timeouts, partial results, and cancellation cleanup.
-7. **Implemented** — Implement the deterministic decision engine and its unit tests.
-8. **Implemented** — Expose the fixed workflow and deterministic decision through `POST /api/v1/reviews`, with safe partial-failure responses and lifecycle tests.
-9. **Implemented** — Build the manual-input UI and explainable complete or partial report view.
-10. **In progress** — Three deterministic evaluation fixtures are implemented; the optional live-model evaluation process remains planned.
-11. **Optional stretch goal** — Add the evidence-bounded Revision Agent.
-12. **Optional stretch goal** — Add pre-commit hooks or other carefully selected tooling.
+The defined MVP is complete. Live-model benchmarking and an evidence-bounded Revision Agent are **Optional stretch goals**, not unfinished requirements for v0.1.0. No additional product feature is currently committed to the roadmap.
 
 ## AI-assisted development process
 
-This project uses transparent, reviewable AI-assisted development. Detailed entries are recorded in `docs/ai-development-log.md`.
+This project was developed through bounded prompts given to OpenAI Codex. The human developer defined tasks and product constraints; the coding agent inspected existing work, implemented selected tasks, reviewed diffs, ran checks, and reported limitations. Generated changes still require human review.
 
-- AI coding tool: OpenAI Codex
-- Development workflow: a developer supplies a bounded task; the coding agent inspects existing work, makes scoped changes, reviews the diff, runs the required checks, and reports what remains unverified. Human review is still required.
-- Example of corrected AI output: the generated Next.js promotional starter page and unused assets were removed and replaced with the requested minimal PitchGuard status page.
-- Lesson learned: generated scaffolds and AI-authored configuration require the same dependency, diff, build, and safety review as manually written changes.
+Examples recorded in `docs/ai-development-log.md` include:
 
-Commits should remain small and understandable so reviewers can inspect both the code and the decisions behind it.
+- replacing unrelated generated starter content with the PitchGuard interface;
+- correcting an Ollama JSON Schema incompatibility;
+- changing from concurrent to sequential reviewers after a CPU-only smoke test exposed timeout risk;
+- aligning the configured model from `qwen3:8b` to `qwen3:4b`; and
+- verifying deterministic behavior with mocked reviewer outputs.
+
+The repository rules require focused tasks, tests for behavior changes, transparent verification, and human-owned Git commits.
 
 ## Repository structure
 
-The repository is organized as separate backend and frontend projects:
-
 ```text
 PitchGuard/
-├── .github/workflows/ci.yml
+├── .agents/skills/
+├── .github/workflows/
 ├── backend/
 │   ├── app/
 │   ├── tests/
-│   ├── .env.example
+│   ├── Dockerfile
 │   ├── pyproject.toml
 │   └── uv.lock
 ├── frontend/
-│   ├── src/app/
-│   ├── .env.example
+│   ├── src/
+│   ├── Dockerfile
 │   ├── package.json
 │   └── package-lock.json
 ├── docs/
 ├── evals/
 ├── fixtures/
-├── .editorconfig
-├── .gitignore
+├── manual-test-scenarios/
+├── compose.yaml
 ├── AGENTS.md
+├── LICENSE
 └── README.md
 ```
 
 ## License
 
-PitchGuard is available under the MIT License. See `LICENSE` for the full terms.
+PitchGuard is available under the MIT License. See `LICENSE`.

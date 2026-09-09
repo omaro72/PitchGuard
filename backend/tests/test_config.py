@@ -37,7 +37,7 @@ def test_defaults_are_safe_for_local_development() -> None:
 
     assert settings.app_env is AppEnvironment.DEVELOPMENT
     assert settings.ollama_base_url == "http://localhost:11434"
-    assert settings.ollama_model == "qwen3:8b"
+    assert settings.ollama_model == "qwen3:4b"
     assert settings.ollama_timeout_seconds == 120
     assert settings.cors_origins == ["http://localhost:3000"]
 
@@ -197,7 +197,7 @@ def test_get_settings_caches_until_cleared(
     second = get_settings()
 
     assert second is first
-    assert second.ollama_model == "qwen3:8b"
+    assert second.ollama_model == "qwen3:4b"
 
     get_settings.cache_clear()
     third = get_settings()

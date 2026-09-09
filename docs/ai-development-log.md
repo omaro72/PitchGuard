@@ -2,6 +2,122 @@
 
 This log records meaningful AI-assisted development tasks without implying that generated work was accepted without review.
 
+## 2026-09-09 — Final MVP coherence audit
+
+### Goal
+
+Make the completed PitchGuard MVP internally consistent across active documentation, application copy, environment defaults, local packaging, and development tooling without adding product features.
+
+### Instructions given to the AI coding tool
+
+Audit the whole repository, preserve implemented behavior, close the documented v0.1.0 scope, ask before making ambiguous dependency choices, run all available checks, and leave the result uncommitted for human review.
+
+### Generated changes reviewed
+
+- Traced the review endpoint through the sequential workflow, reviewer validation, deterministic decision engine, and frontend API boundary.
+- Compared active documentation with schemas, thresholds, timeouts, prompt versions, environment examples, Docker configuration, package manifests, tests, and current UI states.
+- Checked current package information and official tool releases without automatically adopting incompatible major application dependency changes.
+- Reviewed repository status, tracked files, active placeholders, comment policy, ignored environment files, and container build inputs.
+
+### Problems or incorrect assumptions found
+
+- The README and PRD still called the MVP in progress and presented live-model benchmarking and automatic revision as unfinished work.
+- Several README sections used proposed or future-tense wording for behavior already implemented, while other sections called deployment planned even though it is an explicit non-goal.
+- The frontend loading message did not make the sequential reviewer behavior clear.
+- The tracked `install.ps1` file was an unrelated external tool installer, was unused by PitchGuard, and violated the repository's zero-comment rule.
+- The frontend Claude instruction file imported only its nested guidance rather than the repository-wide rules.
+- The GitHub Actions used older major action versions, and the backend Docker build used an older `uv` release.
+
+### Corrections made
+
+- Rewrote the README as an accurate v0.1.0 handoff with current behavior, exact decision rules, Docker and native startup, evaluation coverage, security boundaries, limitations, non-goals, and repository structure.
+- Marked the PRD complete and moved live benchmarking and the Revision Agent outside the completed MVP rather than leaving active `[TBD]` entries.
+- Consolidated current model, timeout, retry, endpoint, input-limit, language, testing, packaging, and license choices in the project-decisions document.
+- Updated evaluation and prompt documentation to avoid claiming an unfinished live benchmark.
+- Updated loading copy to describe reviewers running in sequence.
+- Removed the unrelated installer and made the frontend Claude file import both root and frontend agent rules.
+- Updated GitHub Actions to their current compatible major tags and the Docker build tool to `uv` 0.12.11.
+- Kept Node 24, TypeScript 5, ESLint 9, and their current lockfile because the available alternatives were unrelated major-version upgrades.
+
+### Verification performed
+
+- `uv tree --outdated --locked --depth 1` found no outdated direct Python dependencies.
+- `npm outdated --json` reported only the intentionally retained major-version alternatives for Node types, ESLint, and TypeScript.
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed for 58 files.
+- `uv run pytest` passed with 297 tests, one skipped Ollama integration test, and one upstream Starlette deprecation warning.
+- `npm run test -- --pool=forks --maxWorkers=1` passed with 9 tests after the sandbox blocked Vitest's normal Windows worker process.
+- `npm run lint`, `npm run typecheck`, and `npm run build` passed.
+- `docker compose config --quiet` passed.
+- `docker compose build backend frontend` passed with the updated Docker build tool.
+- The updated GitHub Actions file parsed successfully as YAML.
+- Active documentation contains no unfinished `TBD`, `TODO`, `FIXME`, `In progress`, or `Planned` marker.
+- `git diff --check` passed, and the ignored backend `.env` file is not staged.
+
+### Remaining limitations
+
+- Representative live-model quality metrics are outside v0.1.0 and are not claimed.
+- The live Ollama integration test remains skipped by default.
+- GitHub Actions was not executed on GitHub during this local task.
+- Existing healthy Docker containers were not recreated, avoiding interruption of the active local session; the updated images were built successfully.
+- Human review, staging, committing, and pushing remain the developer's responsibility.
+
+## 2026-09-08 — Docker Compose startup and sequential reviewer workflow
+
+### Goal
+
+Provide an optional one-command Docker startup path that does not require reviewers to install Python, Node.js, or Ollama separately, and make local inference reliable on unknown CPU-only laptops.
+
+### Instructions given to the AI coding tool
+
+Containerize the existing frontend and backend, include Ollama and automatic `qwen3:4b` installation, support common laptop environments and configurable host ports, preserve existing application behavior, verify the complete stack, and ask before choosing between meaningful reliability trade-offs.
+
+### Generated changes reviewed
+
+- Added multi-stage, non-root production images for the FastAPI backend and standalone Next.js frontend.
+- Added Docker build exclusions so local environment files, dependencies, caches, and tests do not enter application images.
+- Added a Compose workflow for Ollama, one-time model preparation, backend health, and frontend health.
+- Pinned the Ollama container version and confirmed its published image supports AMD64 and ARM64 Linux containers.
+- Added container configuration and image builds to CI.
+- Replaced concurrent reviewer execution with the fixed order Evidence, Relevance, then Risk.
+- Updated workflow tests, current documentation, model defaults, and configuration expectations.
+
+### Problems or incorrect assumptions found
+
+- The application default and local environment example used `qwen3:4b`, while tests and current documentation still described `qwen3:8b` as the default.
+- A real Dockerized review showed that Ollama used one CPU inference slot. Concurrent requests therefore waited behind each other, and the PR Risk reviewer exceeded the provider timeout after the other two reviewers succeeded.
+- The normal Vitest command could not start its worker reliably in the current Windows execution environment.
+
+### Corrections made
+
+- Standardized the current default model as `qwen3:4b`.
+- Changed the workflow to run reviewers sequentially without adding a mode flag or alternate orchestration layer.
+- Preserved retries, per-attempt timeouts, successful partial results, cancellation propagation, and programming-error propagation.
+- Kept CPU execution as the portable Docker default and left GPU-specific configuration out of the required path.
+- Retried frontend tests with one forked worker without changing the repository test configuration.
+
+### Verification performed
+
+- `docker manifest inspect ollama/ollama:0.33.3` confirmed AMD64 and ARM64 image variants.
+- `docker compose config` passed.
+- `docker compose build backend frontend` passed.
+- The Ollama, backend, and frontend containers all reached healthy status.
+- The backend health endpoint returned `status=ok` and the frontend returned HTTP 200 from the host.
+- The model preparation service installed `qwen3:4b` in the persistent Docker volume.
+- One fictional Dockerized review completed all three sequential reviewers and returned a complete report without reviewer errors. Its live `REVISE` result is a smoke test, not an evaluation baseline.
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed for 58 files.
+- `uv run pytest` passed with 297 tests, one skipped live integration test, and one upstream deprecation warning.
+- `npm run test -- --pool=forks --maxWorkers=1` passed with 9 tests.
+- `npm run lint`, `npm run typecheck`, and `npm run build` passed.
+
+### Remaining limitations
+
+- The first Docker run requires large Ollama image and 2.5 GB model downloads.
+- CPU-only reviews can take several minutes and still depend on the reviewer's available memory and processing speed.
+- GPU acceleration is optional and is not configured because the required settings differ by platform and hardware vendor.
+- Representative live-model evaluation metrics and acceptance thresholds remain unresolved.
+
 ## 2026-09-08 — Codex frontend skill and Git commit boundary
 
 ### Goal

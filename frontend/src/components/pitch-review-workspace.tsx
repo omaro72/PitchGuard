@@ -606,7 +606,9 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
 
         <div className="flex flex-col gap-4 border-t border-slate-200 bg-[#102a2d] px-4 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <p aria-live="polite" className="text-sm text-slate-300">
-            {isSubmitting ? "The three reviewers are processing the pitch." : "Ready for review."}
+            {isSubmitting
+              ? "The three reviewers are processing the pitch in sequence."
+              : "Ready for review."}
           </p>
           <button
             className="w-full rounded-xl bg-teal-300 px-5 py-3 text-sm font-bold text-[#102a2d] shadow-sm transition-colors hover:bg-teal-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
@@ -654,7 +656,8 @@ export function PitchReviewWorkspace({ apiBaseUrl }: PitchReviewWorkspaceProps) 
             </div>
             <h3 className="font-semibold text-teal-950">Review in progress</h3>
             <p className="mt-2 text-sm leading-6 text-teal-900">
-              Evidence, relevance, and PR risk reviewers are running. A final decision will only appear if all three complete.
+              Evidence, relevance, and PR risk reviewers run one at a time. A final decision will
+              only appear if all three complete.
             </p>
           </div>
         ) : requestFailure ? (
