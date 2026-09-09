@@ -35,7 +35,7 @@ def test_policy_accepts_defaults_and_boundaries() -> None:
     assert ReviewWorkflowPolicy() == ReviewWorkflowPolicy(
         max_attempts=2,
         retry_delay_seconds=0.25,
-        attempt_timeout_seconds=130,
+        attempt_timeout_seconds=370,
     )
     assert (
         ReviewWorkflowPolicy(

@@ -973,6 +973,76 @@ The backend workflow setup step and the official Astral uv GitHub Actions guidan
 
 - The corrected workflow must be pushed before GitHub can execute and confirm it on a hosted runner.
 
+## 2026-09-09 — Refine the MVP README
+
+### Goal
+
+Keep the README focused on the completed MVP and present excluded product ideas as future implementations.
+
+### Instructions given to the AI coding tool
+
+Remove the Revision Agent, the deployment row, non-MVP status content, and the AI-assisted development section, then rename the non-goals section.
+
+### Generated changes reviewed
+
+The README agent descriptions, technology stack, implementation status, evaluation content, limitations, project scope, roadmap, and development-process sections were reviewed.
+
+### Problems or incorrect assumptions found
+
+- Optional and unimplemented work appeared alongside completed MVP capabilities.
+- The README repeated Revision Agent details in several sections.
+
+### Corrections made
+
+- Removed all Revision Agent and automatic-rewriting references.
+- Removed the deployment row and live-model evaluation content from MVP status sections.
+- Replaced the non-goals heading with a concise future-implementations section.
+- Removed the roadmap and AI-assisted development process sections.
+
+### Verification performed
+
+- Searched the README for removed headings, status labels, and Revision Agent references.
+- Reviewed the Markdown diff and checked it for whitespace errors.
+
+### Remaining limitations
+
+- Future implementations are ideas only and are not presented as completed capabilities.
+
+## 2026-09-09 — Extend local reviewer timeouts
+
+### Goal
+
+Allow the local Ollama model more time to complete each sequential review on slower hardware.
+
+### Instructions given to the AI coding tool
+
+Increase the reviewer timeouts to 360 seconds and make all necessary implementation, test, environment, container, and documentation changes.
+
+### Generated changes reviewed
+
+The Ollama provider timeout, workflow attempt policy, environment example, Docker Compose default, tests, README, and project decisions were reviewed.
+
+### Problems or incorrect assumptions found
+
+- Giving the provider and outer workflow the same deadline could cause the workflow guard to cancel the operation before the provider maps its own timeout safely.
+
+### Corrections made
+
+- Increased the Ollama provider timeout from 120 to 360 seconds.
+- Increased the workflow safety timeout from 130 to 370 seconds, preserving a 10-second margin around the provider deadline.
+- Updated the related defaults, tests, and documentation.
+
+### Verification performed
+
+- `uv run ruff check .` passed.
+- `uv run ruff format --check .` passed for 58 files.
+- `uv run pytest` passed with 297 tests passed and 1 skipped.
+- `docker compose config --quiet` passed.
+
+### Remaining limitations
+
+- Retryable failures can make a fully timed-out sequential review take substantially longer because each of the three reviewers may run twice.
+
 ## Date and task
 
 ### Goal

@@ -46,7 +46,7 @@ The report contains:
 
 ## Demo and screenshots
 
-**Implemented — local demo.** The responsive frontend contains the complete manual-input workflow and report view. No screenshot or hosted demo is included because deployment is outside this MVP.
+**Implemented — local demo.** The responsive frontend contains the complete manual-input workflow and report view.
 
 The fastest way to see the application is the Docker Compose option in [Getting started](#getting-started).
 
@@ -96,10 +96,6 @@ It cannot assume facts about the journalist that the user did not provide.
 This reviewer looks for excessive promotion, unsupported superlatives, misleading certainty, spam-like pressure, unclear calls to action, confidentiality problems, and reputational risks. Each finding has a category, a `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` severity, an explanation, and a recommended action.
 
 This reviewer reports risks but never selects the final decision.
-
-### 4. Revision Agent — **Optional stretch goal**
-
-No automatic pitch rewriting is implemented. A future revision component would need to use only supplied, supported facts and require human approval. It is not part of the completed MVP.
 
 ## System architecture
 
@@ -168,7 +164,6 @@ The main guardrails are:
 | CI | GitHub Actions | **Implemented** |
 | Packaging | Docker Compose and separate application images | **Implemented** |
 | Storage | No permanent analysis storage | **Implemented scope decision** |
-| Deployment | No cloud deployment | **MVP non-goal** |
 
 Resolved dependency versions are recorded in `backend/uv.lock` and `frontend/package-lock.json`.
 
@@ -188,8 +183,6 @@ Resolved dependency versions are recorded in `backend/uv.lock` and `frontend/pac
 | Deterministic evaluation fixtures | **Implemented** | `backend/tests/fixtures/evaluation/` |
 | Fictional manual scenarios | **Implemented** | `manual-test-scenarios/` |
 | Docker Compose startup | **Implemented** | `compose.yaml` |
-| Live-model quality baseline | **Not included in MVP** | No benchmark result is claimed |
-| Revision Agent | **Optional stretch goal** | Not implemented |
 
 ## Getting started
 
@@ -243,7 +236,7 @@ Then open `http://localhost:3100`. The portable default uses CPU-compatible Olla
 - Python 3.14
 - [uv](https://docs.astral.sh/uv/) for Python dependency management
 - Node.js 24 and npm
-- Ollama only when running live reviews or the optional integration test
+- Ollama when running live reviews
 
 Install the locked dependencies from the repository root:
 
@@ -265,7 +258,7 @@ The repository contains example files only. Local `.env` files are ignored by Gi
 APP_ENV=development
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:4b
-OLLAMA_TIMEOUT_SECONDS=120
+OLLAMA_TIMEOUT_SECONDS=360
 CORS_ORIGINS=["http://localhost:3000"]
 ```
 
@@ -369,13 +362,9 @@ The wider test suite covers:
 
 Eight additional fictional examples in `manual-test-scenarios/` can be pasted into the UI to explore supported claims, weak personalization, contradiction, poor targeting, confidentiality, spam-like language, and prompt injection.
 
-### Live-model evaluation — **Not included in MVP**
-
-The repository does not claim a representative quality score or acceptance threshold for `qwen3:4b`. A skipped-by-default integration test verifies only the basic structured Ollama connection when explicitly enabled. Any future model evaluation should record the model, prompt versions, test cases, metrics, and acceptance criteria.
-
 ## Example analysis
 
-> **Illustrative example only:** this is not a production result or recorded live-model benchmark.
+> **Illustrative example only:** this is not a production result.
 
 - **Decision:** `REVISE`
 - **Journalist relevance:** 82/100
@@ -405,10 +394,9 @@ These controls reduce risk but do not replace legal review, source verification,
 - The MVP is supported and evaluated in English only. Other Unicode text is accepted but untested; there is no language detection or translation.
 - A request accepts at most 10 evidence items, 10 recent-coverage items, and a pitch from 50 to 6,000 characters. Other limits are recorded in `docs/project-decisions.md`.
 - CPU-only live reviews can take several minutes and depend on the host's available memory and processing speed.
-- No representative live-model quality baseline is included.
-- There is no cloud deployment or permanent analysis history.
+- Analyses do not have permanent storage.
 
-## Project scope and non-goals
+## Project scope and future implementations
 
 ### MVP scope — **Implemented**
 
@@ -422,9 +410,8 @@ These controls reduce risk but do not replace legal review, source verification,
 - Automated tests for critical rules and failures
 - Local native and Docker Compose startup
 
-### Non-goals for this version
+### Future Implementations
 
-- Automatic pitch rewriting
 - Email, WhatsApp, or SMS delivery
 - Journalist databases or web scraping
 - Authentication, billing, or CRM features
@@ -433,24 +420,6 @@ These controls reduce risk but do not replace legal review, source verification,
 - Translation or language detection
 - Cloud deployment
 - Fully autonomous outreach
-
-## Roadmap
-
-The defined MVP is complete. Live-model benchmarking and an evidence-bounded Revision Agent are **Optional stretch goals**, not unfinished requirements for v0.1.0. No additional product feature is currently committed to the roadmap.
-
-## AI-assisted development process
-
-This project was developed through bounded prompts given to OpenAI Codex. The human developer defined tasks and product constraints; the coding agent inspected existing work, implemented selected tasks, reviewed diffs, ran checks, and reported limitations. Generated changes still require human review.
-
-Examples recorded in `docs/ai-development-log.md` include:
-
-- replacing unrelated generated starter content with the PitchGuard interface;
-- correcting an Ollama JSON Schema incompatibility;
-- changing from concurrent to sequential reviewers after a CPU-only smoke test exposed timeout risk;
-- aligning the configured model from `qwen3:8b` to `qwen3:4b`; and
-- verifying deterministic behavior with mocked reviewer outputs.
-
-The repository rules require focused tasks, tests for behavior changes, transparent verification, and human-owned Git commits.
 
 ## Repository structure
 

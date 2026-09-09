@@ -38,7 +38,7 @@ The API is authoritative. The frontend mirrors limits that browsers can enforce 
 
 The limits keep local inference requests bounded while allowing a complete, manually pasted pitch and supporting context. Existing ID uniqueness, ID format, and URL validation remain in force.
 
-The existing reviewer generation budgets remain 4,096 tokens for Claim and Evidence, 2,048 for Journalist Relevance, and 3,072 for PR Risk. The fixed workflow retains two attempts, a 0.25-second retry delay, and a 130-second per-attempt timeout.
+The existing reviewer generation budgets remain 4,096 tokens for Claim and Evidence, 2,048 for Journalist Relevance, and 3,072 for PR Risk. The fixed workflow retains two attempts, a 0.25-second retry delay, and a 370-second per-attempt safety timeout.
 
 The fixed reviewer order is Claim and Evidence, Journalist Relevance, then PR Risk. Reviewers run sequentially so each local inference request receives the available CPU and memory without waiting behind other concurrent requests. Expected reviewer failures do not stop later reviewers, allowing successful partial results to remain available. Cancellation and unexpected programming errors still propagate immediately.
 
@@ -57,8 +57,8 @@ The native development defaults are:
 | Application environment | `development` |
 | Ollama URL | `http://localhost:11434` |
 | Ollama model | `qwen3:4b` |
-| Provider timeout | 120 seconds |
-| Workflow timeout per attempt | 130 seconds |
+| Provider timeout | 360 seconds |
+| Workflow safety timeout per attempt | 370 seconds |
 | Workflow attempts | 2 |
 | Retry delay | 0.25 seconds |
 | Frontend URL allowed by CORS | `http://localhost:3000` |

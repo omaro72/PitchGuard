@@ -38,7 +38,7 @@ def test_defaults_are_safe_for_local_development() -> None:
     assert settings.app_env is AppEnvironment.DEVELOPMENT
     assert settings.ollama_base_url == "http://localhost:11434"
     assert settings.ollama_model == "qwen3:4b"
-    assert settings.ollama_timeout_seconds == 120
+    assert settings.ollama_timeout_seconds == 360
     assert settings.cors_origins == ["http://localhost:3000"]
 
 

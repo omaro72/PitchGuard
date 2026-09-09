@@ -8,4 +8,4 @@ class ReviewWorkflowPolicy(PitchGuardSchema):
 
     max_attempts: int = Field(default=2, ge=1, le=3)
     retry_delay_seconds: float = Field(default=0.25, ge=0, le=5)
-    attempt_timeout_seconds: float = Field(default=130, ge=1, le=600)
+    attempt_timeout_seconds: float = Field(default=370, ge=1, le=600)
